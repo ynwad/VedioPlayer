@@ -1,0 +1,3 @@
+CONFIG += c++17
+
+INCLUDEPATH += $$PWD/src
