@@ -32,13 +32,13 @@ int Mutex::Lock() const
 
 }
 
-int Mutex::Unlock() const
-{
-#if defined(WIN32)
-    bool ret = ::ReleaseMutex(m_mutex);
-#else
-    int ret = pthread_mutex_unlock((pthread_mutex_t*)&mutex);
-#endif
-    return ret;
-}
+//int Mutex::Unlock() const
+//{
+//#if defined(WIN32)
+//    bool ret = ::ReleaseMutex(m_mutex);
+//#else
+//    int ret = pthread_mutex_unlock((pthread_mutex_t*)&mutex);
+//#endif
+//    return ret;
+//}
 

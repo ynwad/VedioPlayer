@@ -5,6 +5,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <memory>
+#include <QImage>
+
+extern "C"{
+#include <libavutil/frame.h>
+    #include <libswscale/swscale.h>
+    #include <libavutil/imgutils.h>
+}
 
 class VideoFrame
 {
@@ -24,6 +31,8 @@ public:
     uint8_t * buffer(){return mYuv420Buffer;}
     int width(){return mWidth;}
     int height(){return mHegiht;}
+
+    QImage YUV420pToQImage();
 
 protected:
     uint8_t *mYuv420Buffer;

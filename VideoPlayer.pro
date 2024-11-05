@@ -11,11 +11,13 @@ CONFIG += c++17
 SOURCES += \
     app_config.cpp \
     main.cpp \
-    video_player_widget.cpp
+    video_player_widget.cpp \
+    Base/function_transfer.cpp
 
 HEADERS += \
     app_config.h \
-    video_player_widget.h
+    video_player_widget.h \
+    Base/function_transfer.h
 
 FORMS += \
     video_player_widget.ui

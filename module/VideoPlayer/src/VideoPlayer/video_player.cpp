@@ -1,8 +1,18 @@
 ﻿#include "video_player.h"
-#include "spdlog/spdlog.h"
 
 VideoPlayer::VideoPlayer(){
+    mConditon_Video = new Cond;
+    mConditon_Audio = new Cond;
 
+    m_playerState = VideoPlayer_Stop;
+
+    m_videoPlayerCallBack = nullptr;
+
+    m_audioDevID = 0;
+    m_bIsMute = false;
+    m_bIsNeedPause = false;
+
+    m_fVolume = 1.0;
 }
 
 VideoPlayer::~VideoPlayer(){
@@ -62,7 +72,8 @@ void VideoPlayer::readVideoFile(){
     doTotalTimeChanged(getTotalTime());
 
     /// 打开视频编码器, 并启动视频线程
-    if(videoStream > 0){
+    if(videoStream >= 0){
+        pCodecCtx = avcodec_alloc_context3(NULL);
         ///查找视频解码器
         if(avcodec_parameters_to_context(pCodecCtx, pFormatCtx->streams[videoStream]->codecpar) < 0){
             SPDLOG_ERROR("Failed to copy codec parameters from video_stream->codecpar to codec_ctx.");
@@ -94,7 +105,8 @@ void VideoPlayer::readVideoFile(){
     }
 
     /// 打开音频解码器
-    if(audioStream >= 0){
+    if(/*audioStream >= 0*/false){
+        aCodecCtx = avcodec_alloc_context3(NULL);
         /// 查找音频解码器
         if (avcodec_parameters_to_context(aCodecCtx, pFormatCtx->streams[audioStream]->codecpar) < 0) {
             SPDLOG_ERROR("Failed to copy codec parameters from audio_stream->codecpar to codec_ctx.");
@@ -127,12 +139,73 @@ void VideoPlayer::readVideoFile(){
                 SDL_PauseAudioDevice(m_audioDevID, 0);
                 SDL_UnlockAudioDevice(m_audioDevID);\
 
-                mIsAudioThreadFinished = false;
+                m_bIsAudioThreadFinished = false;
             }
             else{
                 doOpenSdlFailed(nCode);
             }
         }
+    }
+
+    m_playerState = VideoPlayer_Playing;
+
+    doPlayerStateChanged(VideoPlayer_Playing, m_videoStream != nullptr, m_audioStream != nullptr);
+
+    m_videoStartTime = av_gettime();
+
+    SPDLOG_INFO("m_bIsQuit={}  m_bIsPause={} ", m_bIsQuit, m_bIsPause);
+
+    while(true){
+        if(m_bIsQuit){
+            // 停止播放
+            break;
+        }
+        if(m_seek_req){
+            // 跳转播放
+        }
+        //这里做了个限制  当队列里面的数据超过某个大小的时候 就暂停读取  防止一下子就把视频读完了，导致的空间分配不足
+        //这个值可以稍微写大一些
+        if(m_audioPacktList.size() > MAX_AUDIO_SIZE || m_videoPacktList.size() > MAX_VIDEO_SIZE){
+            mSleep(10);
+            continue;
+        }
+        if(m_bIsPause){
+            mSleep(10);
+            continue;
+        }
+        AVPacket packet;
+        if(av_read_frame(pFormatCtx, &packet) < 0){
+            m_bIsReadFinished = true;
+            if(m_bIsQuit){
+                break;
+            }
+            mSleep(10);
+            continue;
+        }
+        if(packet.stream_index == videoStream){
+            // 将数据存入队列 因此不调用 av_free_packet 释放
+            inputVideoQuene(packet);
+        }
+        else if(packet.stream_index == audioStream ){
+            if (m_bIsAudioThreadFinished){
+                ///SDL没有打开，则音频数据直接释放
+                av_packet_unref(&packet);
+            }
+            else{
+                inputAudioQuene(packet);
+                //这里我们将数据存入队列 因此不调用 av_free_packet 释放
+            }
+        }
+        else{
+            // Free the packet that was allocated by av_read_frame
+            av_packet_unref(&packet);
+        }
+    }
+
+    /// 文件读取结束 跳出循环的情况
+    /// 等待播放完毕
+    while(!m_bIsQuit){
+        mSleep(100);
     }
 end:
     clearAudioQuene();
@@ -163,11 +236,16 @@ end:
         pCodecCtx = nullptr;
     }
 
+    avformat_close_input(&pFormatCtx);
+    avformat_free_context(pFormatCtx);
+
+    SDL_Quit();
+
+    doPlayerStateChanged(VideoPlayer_Stop, m_videoStream != nullptr, m_audioStream != nullptr);
+
+    m_bIsReadFinished = true;
+
     SPDLOG_INFO("readFile finished");
-}
-
-void VideoPlayer::decodeVideoThread(){
-
 }
 
 int64_t VideoPlayer::getTotalTime(){
@@ -194,24 +272,50 @@ bool VideoPlayer::startPlay(const std::string &strFilePath){
 }
 
 bool VideoPlayer::inputVideoQuene(const AVPacket &pkt){
-
+    AVPacket new_pkt;
+    if (av_packet_ref(&new_pkt, &pkt) < 0){
+        return false;
+    }
+    mConditon_Video->Lock();
+    m_videoPacktList.push_back(new_pkt);
+    mConditon_Video->Signal();
+    mConditon_Video->Unlock();
+    return true;
 }
 
 void VideoPlayer::clearVideoQuene(){
-
+    mConditon_Video->Lock();
+    for (AVPacket &pkt : m_videoPacktList){
+        av_packet_unref(&pkt);
+    }
+    m_videoPacktList.clear();
+    mConditon_Video->Unlock();
 }
 
 bool VideoPlayer::inputAudioQuene(const AVPacket &pkt){
-
+    AVPacket new_pkt;
+    if (av_packet_ref(&new_pkt, &pkt) < 0){
+        return false;
+    }
+    mConditon_Audio->Lock();
+    m_audioPacktList.push_back(new_pkt);
+    mConditon_Audio->Signal();
+    mConditon_Audio->Unlock();
+    return true;
 }
 
 void VideoPlayer::clearAudioQuene(){
-
+    mConditon_Audio->Lock();
+    for (AVPacket &pkt : m_audioPacktList){
+        av_packet_unref(&pkt);
+    }
+    m_audioPacktList.clear();
+    mConditon_Audio->Unlock();
 }
 
 int VideoPlayer::openSDL(){
 
-
+    return 0;
 }
 
 void VideoPlayer::closeSDL(){
@@ -250,8 +354,8 @@ void VideoPlayer::doTotalTimeChanged(const int64_t &uSec){
 
 ///播放器状态改变的时候回调此函数
 void VideoPlayer::doPlayerStateChanged(const VideoPlayerState &state, const bool &hasVideo, const bool &hasAudio){
-    SPDLOG_INFO("Player State Changed, VideoPlayerState: {}, hasVideo: {}, hasAudio: {}"
-                , state, hasVideo, hasAudio);
+//    SPDLOG_INFO("Player State Changed, VideoPlayerState: {}, hasVideo: {}, hasAudio: {}"
+//                , state, hasVideo, hasAudio);
 
     if (m_videoPlayerCallBack != nullptr)
     {

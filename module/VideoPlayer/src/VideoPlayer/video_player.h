@@ -32,6 +32,11 @@ extern "C"{
 #include "types.h"
 #include "Mutex/cond.h"
 #include "EventHandle/video_player_event_handle.h"
+#include "spdlog/spdlog.h"
+
+#define MAX_AUDIO_SIZE (50 * 20)
+#define MAX_VIDEO_SIZE (25 * 20)
+#define FLUSH_DATA "FLUSH"
 
 class VideoPlayer{
 public:
@@ -72,9 +77,11 @@ private:
 
 protected:
     void readVideoFile();
-
     void decodeVideoThread();
 
+    static void sdlAudioCallBackFunc(void *userdata, Uint8 *stream, int len);
+    void sdlAudioCallBack(Uint8 *stream, int len);
+    void decodeAudioFrame(bool isBlock = false);
 private:
 
     /// 音视频帧队列相关操作
@@ -102,16 +109,30 @@ private:
     bool m_bIsMute;
     float m_fVolume;
 
+    /// 跳转相关的变量
+    int             m_seek_req = 0; //跳转标志
+    int64_t         m_seek_pos; //跳转的位置 -- 微秒
+    int             m_seek_flag_audio;//跳转标志 -- 用于音频线程中
+    int             m_seek_flag_video;//跳转标志 -- 用于视频线程中
+    double          m_seek_time; //跳转的时间(秒)  值和seek_pos是一样的
+
     // 播放控制相关
-    bool mIsVideoThreadFinished; //视频解码线程
-    bool mIsAudioThreadFinished; //音频播放线程
+    bool m_bIsVideoThreadFinished; //视频解码线程
+    bool m_bIsAudioThreadFinished; //音频播放线程
 
     bool m_bIsPause;  //暂停标志
     bool m_bIsQuit;   //停止
     bool m_bIsReadFinished; //文件读取完毕
+    bool m_bIsNeedPause; //暂停后跳转先标记此变量
 
     AVStream *m_videoStream; //视频流
     AVStream *m_audioStream; //音频流
+
+    ///音视频同步相关
+    uint64_t m_videoStartTime; //开始播放视频的时间
+    uint64_t m_pauseStartTime; //暂停开始的时间
+    double m_audio_clock; ///音频时钟
+    double m_video_clock; ///<pts of last decoded frame / predicted pts of next decoded frame
 
     ///视频相关
     AVFormatContext *pFormatCtx;
@@ -128,11 +149,11 @@ private:
 
     ///视频帧队列
     Cond *mConditon_Video;
-    std::list<AVPacket> mVideoPacktList;
+    std::list<AVPacket> m_videoPacktList;
 
     ///音频帧队列
     Cond *mConditon_Audio;
-    std::list<AVPacket> mAudioPacktList;
+    std::list<AVPacket> m_audioPacktList;
 
 };
 

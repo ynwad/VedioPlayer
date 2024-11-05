@@ -1,4 +1,4 @@
-#ifndef COND_H
+﻿#ifndef COND_H
 #define COND_H
 
 /// 注意Mingw的话使用的是linux下的api pthread
@@ -20,6 +20,7 @@ class Cond
 {
 public:
     Cond();
+
     ~Cond();
 
     //上锁

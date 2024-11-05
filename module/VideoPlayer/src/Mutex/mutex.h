@@ -1,4 +1,4 @@
-#ifndef MUTEX_H
+﻿#ifndef MUTEX_H
 #define MUTEX_H
 
 
@@ -20,7 +20,9 @@ public:
     int Lock() const;
 
     //释放当前线程拥有的互斥对象，以使其它线程可以拥有互斥对象，对被保护资源进行访问
-    int Unlock() const;
+    int Unlock() const{
+        return 0;
+    }
 
 private:
 
