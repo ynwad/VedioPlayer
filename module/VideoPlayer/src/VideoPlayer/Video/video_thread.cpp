@@ -261,7 +261,7 @@ void VideoPlayer::decodeVideoThread(){
         mConditon_Video->Unlock();
 
         AVPacket *packet = &pkt1;
-
+//        SPDLOG_INFO("packet  pts: {}", packet->pts);
         // 收到这个数据，说明刚执行过跳转， 现在需要把解码器的数据清除一下
         if(strcmp((char*)packet->data, FLUSH_DATA) == 0){
             avcodec_flush_buffers(pCodecCtx);
@@ -323,8 +323,8 @@ void VideoPlayer::decodeVideoThread(){
 
                 int delayTime = (video_pts - audio_pts) * 1000;
 
-                delayTime = delayTime > 5 ? 5:delayTime;
-
+                delayTime = delayTime > 5 ? 5 : delayTime;
+                SPDLOG_INFO("delayTime: {}", delayTime);
                 if (!m_bIsNeedPause)
                 {
                     mSleep(delayTime);

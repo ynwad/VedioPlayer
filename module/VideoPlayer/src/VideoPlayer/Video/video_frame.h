@@ -30,7 +30,7 @@ public:
 
     uint8_t * buffer(){return mYuv420Buffer;}
     int width(){return mWidth;}
-    int height(){return mHegiht;}
+    int height(){return mHeight;}
 
     QImage YUV420pToQImage();
 
@@ -38,7 +38,7 @@ protected:
     uint8_t *mYuv420Buffer;
 
     int mWidth;
-    int mHegiht;
+    int mHeight;
 };
 
 #endif // VIDEOFRAME_H

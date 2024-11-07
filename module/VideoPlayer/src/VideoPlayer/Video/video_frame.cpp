@@ -23,7 +23,7 @@ void VideoFrame::initBuffer(const int &width, const int &height)
     }
 
     mWidth  = width;
-    mHegiht = height;
+    mHeight = height;
 
     mYuv420Buffer = (uint8_t*)malloc(width * height * 3 / 2);
 
@@ -31,81 +31,70 @@ void VideoFrame::initBuffer(const int &width, const int &height)
 
 void VideoFrame::setYUVbuf(const uint8_t *buf)
 {
-    int Ysize = mWidth * mHegiht;
+    int Ysize = mWidth * mHeight;
     memcpy(mYuv420Buffer, buf, Ysize * 3 / 2);
 }
 
 void VideoFrame::setYbuf(const uint8_t *buf)
 {
-    int Ysize = mWidth * mHegiht;
+    int Ysize = mWidth * mHeight;
     memcpy(mYuv420Buffer, buf, Ysize);
 }
 
 void VideoFrame::setUbuf(const uint8_t *buf)
 {
-    int Ysize = mWidth * mHegiht;
+    int Ysize = mWidth * mHeight;
     memcpy(mYuv420Buffer + Ysize, buf, Ysize / 4);
 }
 
 void VideoFrame::setVbuf(const uint8_t *buf)
 {
-    int Ysize = mWidth * mHegiht;
+    int Ysize = mWidth * mHeight;
     memcpy(mYuv420Buffer + Ysize + Ysize / 4, buf, Ysize / 4);
 }
 
 QImage VideoFrame::YUV420pToQImage() {
-//    uint8_t *yuvData = mYuv420Buffer;
-    int width = mWidth;
-    int height = mHegiht;
-    // 创建 SwsContext 用于转换像素格式
+    // RGB 缓冲区大小
+    int rgbBufferSize = mWidth * mHeight * 3; // RGB24 每个像素3字节
+    uint8_t *rgbBuffer = new uint8_t[rgbBufferSize]; // 为RGB数据分配内存
+
+    // 初始化SwsContext
     SwsContext *swsCtx = sws_getContext(
-        width, height, AV_PIX_FMT_YUV420P,   // 输入格式
-        width, height, AV_PIX_FMT_RGB24,     // 输出格式
-        SWS_BILINEAR, NULL, NULL, NULL
+        mWidth, mHeight, AV_PIX_FMT_YUV420P,  // 源格式
+        mWidth, mHeight, AV_PIX_FMT_RGB24,    // 目标格式
+        SWS_BILINEAR, nullptr, nullptr, nullptr
         );
 
     if (!swsCtx) {
-        qWarning("Failed to create SwsContext");
-        return QImage();
+        fprintf(stderr, "无法初始化 sws context\n");
+        delete[] rgbBuffer;
+        return QImage(); // 返回空图像表示失败
     }
 
-    // 分配 RGB 数据缓冲区
-    int numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB24, width, height, 1);
-    uint8_t *rgbData = (uint8_t*)av_malloc(numBytes * sizeof(uint8_t));
-    if (!rgbData) {
-        qWarning("Failed to allocate RGB buffer");
-        sws_freeContext(swsCtx);
-        return QImage();
-    }
+//    AVFrame* pFrameYUV = av_frame_alloc();
+//    av_image_fill_arrays(pFrameYUV->data, pFrameYUV->linesize, mYuv420Buffer, AV_PIX_FMT_YUV420P, mWidth, mHeight, 1);
 
-    // 设置源和目标数据指针
-    uint8_t *srcSlice[AV_NUM_DATA_POINTERS] = { mYuv420Buffer, nullptr, nullptr, nullptr };
-    int srcStride[AV_NUM_DATA_POINTERS] = { width, width / 2, width / 2, 0 };
+    // 设置源数据和行步长
+    uint8_t *srcData[AV_NUM_DATA_POINTERS] = { mYuv420Buffer, mYuv420Buffer + mWidth * mHeight, mYuv420Buffer + mWidth * mHeight * 5 / 4 };
+    int srcLineSize[AV_NUM_DATA_POINTERS] = { mWidth, mWidth / 2, mWidth / 2};
 
-    uint8_t *dstSlice[AV_NUM_DATA_POINTERS] = { rgbData, nullptr, nullptr, nullptr };
-    int dstStride[AV_NUM_DATA_POINTERS] = { 3 * width, 0, 0, 0 };
+    // 设置目标数据和行步长
+//    AVFrame* pFrameRGB = av_frame_alloc();
+//    av_image_fill_arrays(pFrameRGB->data, pFrameRGB->linesize, rgbBuffer, AV_PIX_FMT_RGB24, mWidth, mHeight, 1);
 
-    // 进行像素格式转换
-    sws_scale(
-        swsCtx,
-        srcSlice,
-        srcStride,
-        0,
-        height,
-        dstSlice,
-        dstStride
-        );
+    uint8_t *dstData[AV_NUM_DATA_POINTERS] = { rgbBuffer };
+    int dstLineSize[AV_NUM_DATA_POINTERS] = { mWidth * 3 };
 
-    // 创建 QImage，使用 RGB 数据
-    QImage img(rgbData, width, height, QImage::Format_RGB888);
+    // 执行格式转换
+    sws_scale(swsCtx, srcData, srcLineSize, 0, mHeight, dstData, dstLineSize);
 
-    // 由于 QImage 不会复制数据，确保在 QImage 生命周期内数据有效
-    // 可以使用 QImage::copy() 来复制数据到新的缓冲区
-    QImage copiedImg = img.copy();
+    // 将转换后的RGB数据转换为QImage
+    QImage image = QImage(rgbBuffer, mWidth, mHeight, QImage::Format_RGB888).copy();
 
-    // 释放资源
-    av_free(rgbData);
+    // 清理
     sws_freeContext(swsCtx);
+    delete[] rgbBuffer; // 注意此时 image 应该已经拷贝数据，rgbBuffer 可删除
 
-    return copiedImg;
+    // 返回 QImage
+    return image;
 }

@@ -34,6 +34,9 @@ extern "C"{
 #include "EventHandle/video_player_event_handle.h"
 #include "spdlog/spdlog.h"
 
+#define SDL_AUDIO_BUFFER_SIZE 1024
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
+
 #define MAX_AUDIO_SIZE (50 * 20)
 #define MAX_VIDEO_SIZE (25 * 20)
 #define FLUSH_DATA "FLUSH"
@@ -81,7 +84,7 @@ protected:
 
     static void sdlAudioCallBackFunc(void *userdata, Uint8 *stream, int len);
     void sdlAudioCallBack(Uint8 *stream, int len);
-    void decodeAudioFrame(bool isBlock = false);
+    int decodeAudioFrame(bool isBlock = false);
 private:
 
     /// 音视频帧队列相关操作
@@ -106,8 +109,8 @@ private:
     VideoPlayerState m_playerState;    // 播放状态
 
     // 音量相关
-    bool m_bIsMute;
-    float m_fVolume;
+    bool m_bIsMute; // 是否静音
+    float m_fVolume;    // 音量 0~1 超过1 表示放大倍数
 
     /// 跳转相关的变量
     int             m_seek_req = 0; //跳转标志
@@ -122,6 +125,7 @@ private:
 
     bool m_bIsPause;  //暂停标志
     bool m_bIsQuit;   //停止
+    bool m_bIsReadThreadFinished;  // 读取线程结束
     bool m_bIsReadFinished; //文件读取完毕
     bool m_bIsNeedPause; //暂停后跳转先标记此变量
 
@@ -143,6 +147,27 @@ private:
     AVCodecContext *aCodecCtx;
     AVCodec *aCodec;
     AVFrame *aFrame;
+
+
+    ///以下变量用于音频重采样
+    /// 由于ffmpeg解码出来后的pcm数据有可能是带平面的pcm，因此这里统一做重采样处理，
+    /// 重采样成44100的16 bits 双声道数据(AV_SAMPLE_FMT_S16)
+    AVFrame *aFrame_ReSample;
+    SwrContext *swrCtx;
+
+    enum AVSampleFormat in_sample_fmt; //输入的采样格式
+    enum AVSampleFormat out_sample_fmt;//输出的采样格式 16bit PCM
+    int in_sample_rate;//输入的采样率
+    int out_sample_rate;//输出的采样率
+    int audio_tgt_channels; ///av_get_channel_layout_nb_channels(out_ch_layout);
+    int out_ch_layout;
+    unsigned int audio_buf_size;
+    unsigned int audio_buf_index;
+    DECLARE_ALIGNED(16,uint8_t,audio_buf) [AVCODEC_MAX_AUDIO_FRAME_SIZE * 4];
+
+    int autorotate = 1;
+    int find_stream_info = 1;
+    int filter_nbthreads = 0;
 
     ///SDL播放音频设备ID
     SDL_AudioDeviceID m_audioDevID;

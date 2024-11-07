@@ -20,10 +20,26 @@ VideoPlayer::~VideoPlayer(){
 }
 
 bool VideoPlayer::initPlayer(){
-    return false;
+    static int bIsInited = false;
+    if(!bIsInited){
+//        av_register_all();
+        avformat_network_init();
+    }
+    return true;
 }
 
 void VideoPlayer::readVideoFile(){
+    ///SDL初始化需要放入子线程中，否则有些电脑会有问题。
+    if (SDL_Init(SDL_INIT_AUDIO))
+    {
+        doOpenSdlFailed(-100);
+        fprintf(stderr, "Could not initialize SDL - %s. \n", SDL_GetError());
+        return;
+    }
+
+    m_bIsReadThreadFinished = false;
+    m_bIsReadFinished = false;
+
     const char * file_path = m_strFilePath.c_str();
 
     pFormatCtx = nullptr;
@@ -41,6 +57,9 @@ void VideoPlayer::readVideoFile(){
     av_dict_set(&opts, "rtsp_transport", "tcp", 0); // 设置tcp or udp，默认一般优先tcp再尝试udp
     av_dict_set(&opts, "stimeout", "60000000", 0);  // 设置超时3秒
 
+    int audioStream = -1;
+    int videoStream = -1;
+
     if(avformat_open_input(&pFormatCtx, file_path, nullptr, &opts) != 0){
         SPDLOG_ERROR("can't open the file.");
         doOpenVideoFileFailed();
@@ -53,17 +72,14 @@ void VideoPlayer::readVideoFile(){
         goto end;
     }
 
-    int audioStream = -1;
-    int videoStream = -1;
-
     ///循环查找视频中包含的流信息，
     for (int i = 0; i < pFormatCtx->nb_streams; i++)
     {
-        if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+        if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
         {
             videoStream = i;
         }
-        if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO  && audioStream < 0)
+        if (pFormatCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO  && audioStream < 0)
         {
             audioStream = i;
         }
@@ -105,7 +121,7 @@ void VideoPlayer::readVideoFile(){
     }
 
     /// 打开音频解码器
-    if(/*audioStream >= 0*/false){
+    if(audioStream >= 0){
         aCodecCtx = avcodec_alloc_context3(NULL);
         /// 查找音频解码器
         if (avcodec_parameters_to_context(aCodecCtx, pFormatCtx->streams[audioStream]->codecpar) < 0) {
@@ -131,6 +147,75 @@ void VideoPlayer::readVideoFile(){
             aFrame = av_frame_alloc();
 
             m_audioStream = pFormatCtx->streams[audioStream];
+
+            //重采样设置选项-----------------------------------------------------------start
+            aFrame_ReSample = nullptr;
+
+            //frame->16bit 44100 PCM 统一音频采样格式与采样率
+            swrCtx = nullptr;
+
+            //输入的声道布局
+            int in_ch_layout;
+
+            //输出的声道布局
+            out_ch_layout = av_get_default_channel_layout(audio_tgt_channels); ///AV_CH_LAYOUT_STEREO
+
+            out_ch_layout &= ~AV_CH_LAYOUT_STEREO_DOWNMIX;
+
+            /// 这里音频播放使用了固定的参数
+            /// 强制将音频重采样成44100 双声道  AV_SAMPLE_FMT_S16
+            /// SDL播放中也是用了同样的播放参数
+            //重采样设置选项----------------
+            //输入的采样格式
+            in_sample_fmt = aCodecCtx->sample_fmt;
+            //输出的采样格式 16bit PCM
+            out_sample_fmt = AV_SAMPLE_FMT_S16;
+            //输入的采样率
+            in_sample_rate = aCodecCtx->sample_rate;
+            //输入的声道布局
+            in_ch_layout = aCodecCtx->channel_layout;
+
+            //输出的采样率
+            //            out_sample_rate = 44100;
+            out_sample_rate = aCodecCtx->sample_rate;
+
+            //输出的声道布局
+
+            audio_tgt_channels = 2; ///av_get_channel_layout_nb_channels(out_ch_layout);
+            out_ch_layout = av_get_default_channel_layout(audio_tgt_channels); ///AV_CH_LAYOUT_STEREO
+
+            out_ch_layout &= ~AV_CH_LAYOUT_STEREO_DOWNMIX;
+
+            /// 2019-5-13添加
+            /// wav/wmv 文件获取到的aCodecCtx->channel_layout为0会导致后面的初始化失败，因此这里需要加个判断。
+            if (in_ch_layout <= 0)
+            {
+                in_ch_layout = av_get_default_channel_layout(aCodecCtx->channels);
+            }
+
+            swrCtx = swr_alloc_set_opts(nullptr, out_ch_layout, out_sample_fmt, out_sample_rate,
+                                        in_ch_layout, in_sample_fmt, in_sample_rate, 0, nullptr);
+
+            /** Open the resampler with the specified parameters. */
+            int ret = swr_init(swrCtx);
+            if (ret < 0)
+            {
+                char buff[128]={0};
+                av_strerror(ret, buff, 128);
+
+                fprintf(stderr, "Could not open resample context %s\n", buff);
+                swr_free(&swrCtx);
+                swrCtx = nullptr;
+                doOpenVideoFileFailed();
+                goto end;
+            }
+
+            //存储pcm数据
+            int out_linesize = out_sample_rate * audio_tgt_channels;
+
+            //        out_linesize = av_samples_get_buffer_size(NULL, audio_tgt_channels, av_get_bytes_per_sample(out_sample_fmt), out_sample_fmt, 1);
+            out_linesize = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+
 
             /// 打开SDL播放声音
             int nCode = openSDL();
@@ -243,7 +328,7 @@ end:
 
     doPlayerStateChanged(VideoPlayer_Stop, m_videoStream != nullptr, m_audioStream != nullptr);
 
-    m_bIsReadFinished = true;
+    m_bIsReadThreadFinished = true;
 
     SPDLOG_INFO("readFile finished");
 }
@@ -259,6 +344,7 @@ bool VideoPlayer::startPlay(const std::string &strFilePath){
 
     m_bIsQuit = false;
     m_bIsPause = false;
+    m_bIsReadFinished = false;
     if(!strFilePath.empty()){
         m_strFilePath = strFilePath;
     }
@@ -314,7 +400,39 @@ void VideoPlayer::clearAudioQuene(){
 }
 
 int VideoPlayer::openSDL(){
+    ///打开SDL，并设置播放的格式为:AUDIO_S16LSB 双声道，44100hz
+    ///后期使用ffmpeg解码完音频后，需要重采样成和这个一样的格式，否则播放会有杂音
+    SDL_AudioSpec wanted_spec, spec;
+    int wanted_nb_channels = 2;
+    int sample_rate = out_sample_rate;
 
+    wanted_spec.channels = wanted_nb_channels;
+    wanted_spec.samples = FFMAX(512, 2 << av_log2(wanted_spec.freq / 30));
+    wanted_spec.freq = sample_rate;
+    wanted_spec.format = AUDIO_S16SYS; // 具体含义请查看“SDL宏定义”部分
+    wanted_spec.silence = 0;            // 0指示静音
+    //    wanted_spec.samples = SDL_AUDIO_BUFFER_SIZE;  // 自定义SDL缓冲区大小
+    wanted_spec.callback = sdlAudioCallBackFunc;  // 回调函数
+    wanted_spec.userdata = this;                  // 传给上面回调函数的外带数据
+
+    int num = SDL_GetNumAudioDevices(0);
+    for (int i=0;i<num;i++)
+    {
+        m_audioDevID = SDL_OpenAudioDevice(SDL_GetAudioDeviceName(i,0), false, &wanted_spec, &spec,0);
+        if (m_audioDevID > 0)
+        {
+            break;
+        }
+    }
+
+    /* 检查实际使用的配置（保存在spec,由SDL_OpenAudio()填充） */
+    //    if (spec.format != AUDIO_S16SYS)
+    if (m_audioDevID <= 0)
+    {
+        m_bIsAudioThreadFinished = true;
+        return -1;
+    }
+    SPDLOG_INFO("m_audioDevID = %d\n", m_audioDevID);
     return 0;
 }
 
@@ -367,6 +485,7 @@ void VideoPlayer::doPlayerStateChanged(const VideoPlayerState &state, const bool
 void VideoPlayer::doDisplayVideo(const uint8_t *yuv420Buffer, const int &width, const int &height){
     if (m_videoPlayerCallBack != nullptr)
     {
+        SPDLOG_INFO("do once DisplayVideo");
         VideoFrame::ptr pVideoFrame = std::make_shared<VideoFrame>();
 
         pVideoFrame->initBuffer(width, height);
