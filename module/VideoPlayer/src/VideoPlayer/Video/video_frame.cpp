@@ -63,7 +63,7 @@ QImage VideoFrame::YUV420pToQImage() {
         mWidth, mHeight, AV_PIX_FMT_YUV420P,  // 源格式
         mWidth, mHeight, AV_PIX_FMT_RGB24,    // 目标格式
         SWS_BILINEAR, nullptr, nullptr, nullptr
-        );
+    );
 
     if (!swsCtx) {
         fprintf(stderr, "无法初始化 sws context\n");

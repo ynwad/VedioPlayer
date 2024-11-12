@@ -261,7 +261,6 @@ void VideoPlayer::decodeVideoThread(){
         mConditon_Video->Unlock();
 
         AVPacket *packet = &pkt1;
-//        SPDLOG_INFO("packet  pts: {}", packet->pts);
         // 收到这个数据，说明刚执行过跳转， 现在需要把解码器的数据清除一下
         if(strcmp((char*)packet->data, FLUSH_DATA) == 0){
             avcodec_flush_buffers(pCodecCtx);
@@ -314,7 +313,7 @@ void VideoPlayer::decodeVideoThread(){
                     audio_pts = (av_gettime() - m_videoStartTime) / 1000000.0;
                     m_audio_clock = audio_pts;
                 }
-                //主要是 跳转的时候 我们把video_clock设置成0了
+                //主要是 跳转的时候 我们把video_clock设置成 0了
                 //因此这里需要更新video_pts
                 //否则当从后面跳转到前面的时候 会卡在这里
                 video_pts = m_video_clock;
@@ -324,7 +323,7 @@ void VideoPlayer::decodeVideoThread(){
                 int delayTime = (video_pts - audio_pts) * 1000;
 
                 delayTime = delayTime > 5 ? 5 : delayTime;
-                SPDLOG_INFO("delayTime: {}", delayTime);
+//                SPDLOG_INFO("delayTime: {}", delayTime);
                 if (!m_bIsNeedPause)
                 {
                     mSleep(delayTime);

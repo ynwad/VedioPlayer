@@ -54,10 +54,23 @@ public:
     ///初始化播放器（必需要调用一次）
     static bool initPlayer();
 
+    /// 开始播放
     bool startPlay(const std::string &strFilePath);
 
     // 获取视频总长度
     int64_t getTotalTime(); //单位微秒
+
+    //播放（用于暂停后，重新开始播放）
+    bool play();
+
+    //暂停播放
+    bool pause();
+
+    //停止播放-参数表示是否等待所有的线程执行完毕再返回
+    bool stop(bool isWait = false);
+
+    /// 跳转到指定位置播放
+    void seek(int64_t pos); //单位是微秒
 
 private:
     ///回调函数

@@ -50,6 +50,12 @@ void VideoPlayer::readVideoFile(){
     aCodec = nullptr;
     aFrame = nullptr;
 
+    m_audioStream = nullptr;
+    m_videoStream = nullptr;
+
+    m_audio_clock = 0;
+    m_video_clock = 0;
+
     // Allocate an AVFormatContext.
     pFormatCtx = avformat_alloc_context();
 
@@ -246,7 +252,57 @@ void VideoPlayer::readVideoFile(){
             break;
         }
         if(m_seek_req){
-            // 跳转播放
+            // 跳转播放, 跳转到指定位置开始读取文件
+            int stream_index = -1;
+            int64_t seek_target = m_seek_pos;
+            if(videoStream >= 0){
+                stream_index = videoStream;
+            }
+            else if(audioStream >= 0){
+                stream_index = audioStream;
+            }
+
+            AVRational aVRational = {1, AV_TIME_BASE};
+            if(stream_index >= 0){
+                // 将 seek_target 转换为该流的时间基单位，以正确地解码和显示相应的帧
+                seek_target = av_rescale_q(seek_target, aVRational, pFormatCtx->streams[stream_index]->time_base);
+            }
+
+            if (av_seek_frame(pFormatCtx, stream_index, seek_target, AVSEEK_FLAG_BACKWARD) < 0)
+            {
+                SPDLOG_ERROR("error while seeking");
+            }
+            else{
+                // 清除当前帧队列
+                if(videoStream >= 0){
+                    AVPacket packet;
+                    av_new_packet(&packet, 10);
+                    strcpy_s((char*)packet.data, sizeof(FLUSH_DATA), FLUSH_DATA);
+                    clearVideoQuene(); //清除队列
+                    inputVideoQuene(packet); //往队列中存入用来清除的包
+                    m_video_clock = 0;
+                }
+
+                if(audioStream >= 0){
+                    AVPacket packet;
+                    av_new_packet(&packet, 10);
+                    strcpy_s((char*)packet.data, sizeof(FLUSH_DATA), FLUSH_DATA);
+                    clearAudioQuene(); //清除队列
+                    inputAudioQuene(packet); //往队列中存入用来清除的包
+                }
+
+//                m_videoStartTime = av_gettime() - m_seek_pos;
+//                m_pauseStartTime = av_gettime();
+            }
+            m_seek_req = 0;
+            m_seek_time = m_seek_pos / 1000000.0;
+            m_seek_flag_audio = 1;
+            m_seek_flag_video = 1;
+
+            if(m_bIsPause){
+                m_bIsNeedPause = true;
+                m_bIsPause = false;
+            }
         }
         //这里做了个限制  当队列里面的数据超过某个大小的时候 就暂停读取  防止一下子就把视频读完了，导致的空间分配不足
         //这个值可以稍微写大一些
@@ -296,6 +352,18 @@ end:
     clearAudioQuene();
     clearVideoQuene();
 
+    // 如果不是外部调用结束的
+    if(m_playerState != VideoPlayer_Stop){
+        stop();
+    }
+    //确保视频线程结束后 再销毁队列
+    while((m_videoStream != nullptr && !m_bIsVideoThreadFinished) || (m_audioStream != nullptr && !m_bIsAudioThreadFinished))
+    {
+        mSleep(10);
+    }
+
+    closeSDL();
+
 //    if (swrCtx != nullptr){
 //        swr_free(&swrCtx);
 //        swrCtx = nullptr;
@@ -306,10 +374,10 @@ end:
         aFrame = nullptr;
     }
 
-//    if (aFrame_ReSample != nullptr){
-//        av_frame_free(&aFrame_ReSample);
-//        aFrame_ReSample = nullptr;
-//    }
+    if (aFrame_ReSample != nullptr){
+        av_frame_free(&aFrame_ReSample);
+        aFrame_ReSample = nullptr;
+    }
 
     if (aCodecCtx != nullptr){
         avcodec_close(aCodecCtx);
@@ -331,6 +399,25 @@ end:
     m_bIsReadThreadFinished = true;
 
     SPDLOG_INFO("readFile finished");
+}
+
+bool VideoPlayer::play(){
+return false;
+}
+
+bool VideoPlayer::pause(){
+return false;
+}
+
+bool VideoPlayer::stop(bool isWait){
+return false;
+}
+
+void VideoPlayer::seek(int64_t pos){
+    if(!m_seek_req){
+        m_seek_pos = pos;
+        m_seek_req = 1;
+    }
 }
 
 int64_t VideoPlayer::getTotalTime(){
