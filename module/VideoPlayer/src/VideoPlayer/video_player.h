@@ -147,7 +147,7 @@ private:
 
     ///音视频同步相关
     uint64_t m_videoStartTime; //开始播放视频的时间
-    uint64_t m_pauseStartTime; //暂停开始的时间
+    // uint64_t m_pauseStartTime; //暂停开始的时间
     double m_audio_clock; ///音频时钟
     double m_video_clock; ///<pts of last decoded frame / predicted pts of next decoded frame
 

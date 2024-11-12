@@ -291,8 +291,8 @@ void VideoPlayer::readVideoFile(){
                     inputAudioQuene(packet); //往队列中存入用来清除的包
                 }
 
-//                m_videoStartTime = av_gettime() - m_seek_pos;
-//                m_pauseStartTime = av_gettime();
+               m_videoStartTime = av_gettime() - m_seek_pos;
+               // m_pauseStartTime = av_gettime();
             }
             m_seek_req = 0;
             m_seek_time = m_seek_pos / 1000000.0;
@@ -304,8 +304,9 @@ void VideoPlayer::readVideoFile(){
                 m_bIsPause = false;
             }
         }
-        //这里做了个限制  当队列里面的数据超过某个大小的时候 就暂停读取  防止一下子就把视频读完了，导致的空间分配不足
-        //这个值可以稍微写大一些
+        // 这里做了个限制  当队列里面的数据超过某个大小的时候 就暂停读取  防止一下子就把视频读完了，导致的空间分配不足
+        // 这个值可以稍微写大一些
+        // 暂停视频时，也是从此处continue，从而暂停读取文件
         if(m_audioPacktList.size() > MAX_AUDIO_SIZE || m_videoPacktList.size() > MAX_VIDEO_SIZE){
             mSleep(10);
             continue;
@@ -328,8 +329,8 @@ void VideoPlayer::readVideoFile(){
             inputVideoQuene(packet);
         }
         else if(packet.stream_index == audioStream ){
+            ///SDL没有打开，则音频数据直接释放
             if (m_bIsAudioThreadFinished){
-                ///SDL没有打开，则音频数据直接释放
                 av_packet_unref(&packet);
             }
             else{
@@ -402,15 +403,60 @@ end:
 }
 
 bool VideoPlayer::play(){
-return false;
+    m_bIsNeedPause = false;
+    m_bIsPause = false;
+
+    if (m_playerState != VideoPlayer_Pause)
+    {
+        return false;
+    }
+
+    uint64_t pauseTime = av_gettime() - m_videoStartTime; //暂停了多长时间
+    m_videoStartTime += pauseTime; //将暂停的时间加到开始播放的时间上，保证同步不受暂停的影响
+
+    m_playerState = VideoPlayer_Playing;
+    doPlayerStateChanged(VideoPlayer_Playing, m_videoStream != nullptr, m_audioStream != nullptr);
+
+    return true;
 }
 
 bool VideoPlayer::pause(){
-return false;
+    SPDLOG_INFO("m_bIsPause={}", m_bIsPause);
+
+    m_bIsPause = true;
+
+    if (m_playerState != VideoPlayer_Playing)
+    {
+        return false;
+    }
+
+    // m_pauseStartTime = av_gettime();
+
+    m_playerState = VideoPlayer_Pause;
+
+    emit doPlayerStateChanged(VideoPlayer_Pause, m_videoStream != nullptr, m_audioStream != nullptr);
+
+    return true;
 }
 
 bool VideoPlayer::stop(bool isWait){
-return false;
+    if (m_playerState == VideoPlayer_Stop)
+    {
+        return false;
+    }
+
+    m_playerState = VideoPlayer_Stop;
+    m_bIsQuit = true;
+
+    if (isWait)
+    {
+        while(!m_bIsReadThreadFinished)
+        {
+            mSleep(3);
+        }
+    }
+
+    return true;
 }
 
 void VideoPlayer::seek(int64_t pos){
@@ -572,7 +618,7 @@ void VideoPlayer::doPlayerStateChanged(const VideoPlayerState &state, const bool
 void VideoPlayer::doDisplayVideo(const uint8_t *yuv420Buffer, const int &width, const int &height){
     if (m_videoPlayerCallBack != nullptr)
     {
-        SPDLOG_INFO("do once DisplayVideo");
+        // SPDLOG_INFO("do once DisplayVideo");
         VideoFrame::ptr pVideoFrame = std::make_shared<VideoFrame>();
 
         pVideoFrame->initBuffer(width, height);
