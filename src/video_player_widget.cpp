@@ -2,6 +2,7 @@
 
 #include <QMessageBox>
 #include <QTimer>
+#include <QVBoxLayout>
 
 #include "Base/function_transfer.h"
 #include "ui_video_player_widget.h"
@@ -17,9 +18,23 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
     m_player = new VideoPlayer();
     m_player->setVideoPlayerCallBack(this);
 
+    m_showVideoWidget = new ShowVideoWidget(this);
+
     QTimer::singleShot(1000, [&](){
-        m_player->startPlay("E:/test.mp4");
+        m_player->startPlay("E:\\movies\\ADN-495\\ADN-495.mp4");
     });
+
+    QTimer::singleShot(5000, [&](){
+        m_player->pause();
+        // m_player->seek(1000000 * 60 * 30);
+    });
+}
+
+void VideoPlayerWidget::initUI(){
+    QVBoxLayout* vLayout = new QVBoxLayout;
+
+    vLayout->addWidget(m_showVideoWidget);
+    setLayout(vLayout);
 }
 
 VideoPlayerWidget::~VideoPlayerWidget()
@@ -75,28 +90,9 @@ void VideoPlayerWidget::onPlayerStateChanged(const VideoPlayerState &state, cons
 {
 
 }
-#include <QDateTime>
-#include <QDebug>
+
 ///显示视频数据，此函数不宜做耗时操作，否则会影响播放的流畅性。
-void VideoPlayerWidget::onDisplayVideo(std::shared_ptr<VideoFrame> videoFrame)
+void VideoPlayerWidget::onDisplayVideo(VideoFrame::ptr videoFrame)
 {
-    FunctionTransfer::runInMainThread([=](){
-        QImage img = videoFrame->YUV420pToQImage();
-//        QString filePath = "F:/TMP/Image/" + QDateTime::; // 根据需要更改路径
-        // 获取当前时间戳并格式化
-//        QString timeStamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-
-//        // 生成带时间戳的文件名
-//        QString filePath = QString("F:/TMP/Image/image_%1.png").arg(timeStamp);
-
-//        // 保存图像
-//        if (img.save(filePath, "PNG")) {
-//            qDebug() << "图像已成功保存到" << filePath;
-//        } else {
-//            qDebug() << "保存图像失败";
-//        }
-        ui->label->setPixmap(QPixmap::fromImage(img));
-//        QMessageBox::critical(NULL, "tips", QString("open Sdl failed %1").arg(code));
-    });
-//    ui->widget_videoPlayer->inputOneFrame(videoFrame);
+    m_showVideoWidget->inputOneFrame(videoFrame);
 }

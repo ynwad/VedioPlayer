@@ -9,18 +9,22 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    app_config.cpp \
-    main.cpp \
-    video_player_widget.cpp \
-    Base/function_transfer.cpp
+    src/Widget/show_video_widget.cpp \
+    src/app_config.cpp \
+    src/main.cpp \
+    src/video_player_widget.cpp \
+    src/Base/function_transfer.cpp
 
 HEADERS += \
-    app_config.h \
-    video_player_widget.h \
-    Base/function_transfer.h
+    src/Widget/show_video_widget.h \
+    src/app_config.h \
+    src/video_player_widget.h \
+    src/Base/function_transfer.h
 
 FORMS += \
-    video_player_widget.ui
+    src/video_player_widget.ui
+
+INCLUDEPATH += $$PWD/src
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

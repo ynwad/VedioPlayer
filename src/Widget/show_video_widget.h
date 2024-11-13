@@ -1,0 +1,71 @@
+﻿#include <QWidget>
+#include <QPaintEvent>
+#include <QResizeEvent>
+
+#include <QOpenGLWidget>
+#include <QOpenGLShaderProgram>
+#include <QOpenGLFunctions>
+#include <QOpenGLTexture>
+#include <QFile>
+
+#include "VideoPlayer/Video/video_frame.h"
+
+namespace Ui {
+class ShowVideoWidget;
+}
+
+struct FaceInfoNode
+{
+    QRect faceRect;
+};
+
+#define ATTRIB_VERTEX 3
+#define ATTRIB_TEXTURE 4
+
+///显示视频用的widget（使用OPENGL绘制YUV420P数据）
+///这个仅仅是显示视频画面的控件
+
+class ShowVideoWidget : public QOpenGLWidget,protected QOpenGLFunctions
+{
+    Q_OBJECT
+
+public:
+    explicit ShowVideoWidget(QWidget *parent = 0);
+    ~ShowVideoWidget();
+
+    void inputOneFrame(VideoFrame::ptr videoFrame);
+
+protected:
+    //刷新显示
+    void paintGL() override;
+    //初始化GL
+    void initializeGL() override;
+    //窗口尺寸变化
+    void resizeGL(int width,int height) override;
+
+private:
+    GLuint textureUniformY; //y纹理数据位置
+    GLuint textureUniformU; //u纹理数据位置
+    GLuint textureUniformV; //v纹理数据位置
+    GLuint id_y; //y纹理对象ID
+    GLuint id_u; //u纹理对象ID
+    GLuint id_v; //v纹理对象ID
+    QOpenGLTexture* m_pTextureY;  //y纹理对象
+    QOpenGLTexture* m_pTextureU;  //u纹理对象
+    QOpenGLTexture* m_pTextureV;  //v纹理对象
+    // shader程序
+    QOpenGLShaderProgram *m_pShaderProgram;
+
+    // 顶点着色器
+    QOpenGLShader *m_pVShader;
+    // 片段着色器
+    QOpenGLShader *m_pFShader;
+
+    GLfloat *m_vertexVertices; // 顶点矩阵
+
+    int m_nVideoW; //视频分辨率宽
+    int m_nVideoH; //视频分辨率高
+
+    VideoFrame::ptr m_videoFrame;
+
+};

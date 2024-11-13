@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "VideoPlayer/video_player.h"
+#include "Widget/show_video_widget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class VideoPlayerWidget; }
@@ -16,6 +17,8 @@ class VideoPlayerWidget : public QWidget, public VideoPlayerCallBack
 public:
     VideoPlayerWidget(QWidget *parent = nullptr);
     ~VideoPlayerWidget();
+
+    void initUI();
 
 protected:
     ///打开文件失败
@@ -37,6 +40,6 @@ private:
     Ui::VideoPlayerWidget *ui;
 
     VideoPlayer *m_player;
-
+    ShowVideoWidget *m_showVideoWidget;
 };
 #endif // VIDEOPLAYERWIDGET_H
