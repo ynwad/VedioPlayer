@@ -13,6 +13,7 @@ extern "C"{
     #include <libavutil/imgutils.h>
 }
 
+
 class VideoFrame
 {
 public:
@@ -33,6 +34,8 @@ public:
     int height(){return mHeight;}
 
     QImage YUV420pToQImage();
+
+    bool loadYUV420p(const char* filename, int width, int height);
 
 protected:
     uint8_t *mYuv420Buffer;

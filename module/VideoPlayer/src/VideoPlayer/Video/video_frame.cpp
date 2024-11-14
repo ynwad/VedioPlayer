@@ -1,4 +1,6 @@
 ﻿#include "video_frame.h"
+#include <fstream>
+#include <iostream>
 
 VideoFrame::VideoFrame()
 {
@@ -97,4 +99,33 @@ QImage VideoFrame::YUV420pToQImage() {
 
     // 返回 QImage
     return image;
+}
+
+bool VideoFrame::loadYUV420p(const char* filename, int width, int height){
+    // 计算 YUV420p 数据的总大小
+    int frameSize = width * height * 3 / 2;
+    initBuffer(width, height);
+
+    // 打开文件，以二进制模式读取
+    std::ifstream file(filename, std::ios::binary);
+    if (!file) {
+        std::cerr << "无法打开文件 " << filename << std::endl;
+            return false;
+    }
+
+    // 读取文件内容到缓冲区
+    file.read(reinterpret_cast<char*>(mYuv420Buffer), frameSize);
+
+    // 检查读取是否成功
+    if (!file) {
+        std::cerr << "读取文件时发生错误 " << filename << std::endl;
+                                                           file.close();
+        return false;
+    }
+
+    file.close();
+
+    setYUVbuf(mYuv420Buffer);
+
+    return true;
 }

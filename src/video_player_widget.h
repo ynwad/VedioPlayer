@@ -5,12 +5,13 @@
 
 #include "VideoPlayer/video_player.h"
 #include "Widget/show_video_widget.h"
+#include "draggable_widget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class VideoPlayerWidget; }
 QT_END_NAMESPACE
 
-class VideoPlayerWidget : public QWidget, public VideoPlayerCallBack
+class VideoPlayerWidget : public DragAbleWidget, public VideoPlayerCallBack
 {
     Q_OBJECT
 

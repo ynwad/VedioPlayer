@@ -10,9 +10,9 @@
 
 #include "VideoPlayer/Video/video_frame.h"
 
-namespace Ui {
-class ShowVideoWidget;
-}
+//namespace Ui {
+////class ShowVideoWidget;
+//}
 
 struct FaceInfoNode
 {
@@ -35,6 +35,8 @@ public:
 
     void inputOneFrame(VideoFrame::ptr videoFrame);
 
+    void setVideoWidth(int nWidth, int nHeight);
+
 protected:
     //刷新显示
     void paintGL() override;
@@ -44,28 +46,29 @@ protected:
     void resizeGL(int width,int height) override;
 
 private:
-    GLuint textureUniformY; //y纹理数据位置
-    GLuint textureUniformU; //u纹理数据位置
-    GLuint textureUniformV; //v纹理数据位置
-    GLuint id_y; //y纹理对象ID
-    GLuint id_u; //u纹理对象ID
-    GLuint id_v; //v纹理对象ID
-    QOpenGLTexture* m_pTextureY;  //y纹理对象
-    QOpenGLTexture* m_pTextureU;  //u纹理对象
-    QOpenGLTexture* m_pTextureV;  //v纹理对象
+    void resetTexturePara();
+
+private:
+    //shader中yuv变量地址
+    GLuint unis[3] = {0};
+
+    //opengl的texture地址
+    GLuint texs[3] = {0};
+
     // shader程序
     QOpenGLShaderProgram *m_pShaderProgram;
 
-    // 顶点着色器
-    QOpenGLShader *m_pVShader;
-    // 片段着色器
-    QOpenGLShader *m_pFShader;
+//    GLfloat *m_vertexVertices; // 顶点矩阵
 
-    GLfloat *m_vertexVertices; // 顶点矩阵
-
-    int m_nVideoW; //视频分辨率宽
-    int m_nVideoH; //视频分辨率高
+    int m_nVideoW{1}; //视频分辨率宽
+    int m_nVideoH{1}; //视频分辨率高
 
     VideoFrame::ptr m_videoFrame;
+
+    ///OpenGL用于绘制矩形
+//    bool mIsShowFaceRect;
+//    GLuint m_posAttr;
+//    GLuint m_colAttr;
+//    QOpenGLShaderProgram *m_program;
 
 };

@@ -1,3 +1,9 @@
 CONFIG += c++17
 
-INCLUDEPATH += $$PWD/src
+SOURCES += \
+    $$PWD/draggable_widget.cpp
+
+HEADERS += \
+    $$PWD/draggable_widget.h
+
+INCLUDEPATH += $$PWD

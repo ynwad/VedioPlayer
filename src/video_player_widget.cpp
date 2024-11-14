@@ -8,10 +8,10 @@
 #include "ui_video_player_widget.h"
 
 VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
-    : QWidget(parent)
+    : DragAbleWidget(parent)
     , ui(new Ui::VideoPlayerWidget)
 {
-    ui->setupUi(this);
+//    ui->setupUi(this);
 
     FunctionTransfer::init(QThread::currentThreadId());
 
@@ -21,27 +21,29 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
     m_showVideoWidget = new ShowVideoWidget(this);
 
     QTimer::singleShot(1000, [&](){
-        m_player->startPlay("E:\\movies\\ADN-495\\ADN-495.mp4");
+//        m_player->startPlay("E:\\test.mp4");
     });
 
-    QTimer::singleShot(5000, [&](){
-        m_player->pause();
-        // m_player->seek(1000000 * 60 * 30);
-    });
+//    QTimer::singleShot(1000, [&](){
+////        m_player->pause();
+//        // m_player->seek(1000000 * 60 * 30);
+//    });
+    initUI();
 }
 
 void VideoPlayerWidget::initUI(){
     QVBoxLayout* vLayout = new QVBoxLayout;
 
+    m_showVideoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     vLayout->addWidget(m_showVideoWidget);
     setLayout(vLayout);
+    resize(200, 150);
 }
 
 VideoPlayerWidget::~VideoPlayerWidget()
 {
     delete ui;
 }
-
 
 
 ///打开文件失败
