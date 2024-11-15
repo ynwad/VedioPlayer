@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QShortcut>
 
 #include "Base/function_transfer.h"
 #include "ui_video_player_widget.h"
@@ -28,6 +29,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
 ////        m_player->pause();
 //        // m_player->seek(1000000 * 60 * 30);
 //    });
+
     initUI();
 }
 
@@ -36,8 +38,23 @@ void VideoPlayerWidget::initUI(){
 
     m_showVideoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     vLayout->addWidget(m_showVideoWidget);
+    vLayout->setContentsMargins(0, 0, 0, 0);
+    vLayout->setSpacing(0);
+
     setLayout(vLayout);
     resize(200, 150);
+}
+
+void VideoPlayerWidget::initShortCut(){
+    // 创建一个快捷键 (Ctrl + S)
+    QShortcut *shortcut = new QShortcut(QKeySequence("ESC"), this);
+
+    // 连接快捷键信号到槽函数
+    connect(shortcut, &QShortcut::activated, [](){
+        if(isFullScreen()){
+
+        }
+    });
 }
 
 VideoPlayerWidget::~VideoPlayerWidget()

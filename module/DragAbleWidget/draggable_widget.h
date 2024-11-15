@@ -12,8 +12,6 @@
 
 //鼠标实现改变窗口大小
 #define PADDING 6
-enum Direction { UP=0, DOWN, LEFT, RIGHT, LEFTTOP, LEFTBOTTOM, RIGHTBOTTOM, RIGHTTOP, NONE };
-
 
 class DragAbleWidget : public QWidget
 {
@@ -26,10 +24,22 @@ public:
 
     QWidget *getContainWidget();
 
+    void toggleFullScreen();
+
+signals:
+    void fileEntered(QString strFilePath);
+
 protected:
     virtual void dragEnterEvent(QDragEnterEvent *event) override;
 
     virtual void dropEvent(QDropEvent *event) override;
+
+    virtual void mousePressEvent(QMouseEvent *event) override;
+
+private:
+    QString m_strLastEnteredFilePath;
+
+    QSize m_originalSize;  // 用于保存窗口原始尺寸
 };
 
 #endif // DRAGABLEWIDGET_H

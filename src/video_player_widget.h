@@ -21,6 +21,8 @@ public:
 
     void initUI();
 
+    void initShortCut();
+
 protected:
     ///打开文件失败
     void onOpenVideoFileFailed(const int &code);

@@ -13,6 +13,18 @@ DragAbleWidget::~DragAbleWidget(){
 
 }
 
+void DragAbleWidget::toggleFullScreen(){
+    if (isFullScreen()) {
+        // 退出全屏，恢复尺寸
+        showNormal();
+        resize(m_originalSize);  // 恢复到原始尺寸
+    } else {
+        // 记录当前尺寸并切换到全屏模式
+        m_originalSize = size();
+        showFullScreen();
+    }
+}
+
 void DragAbleWidget::dragEnterEvent(QDragEnterEvent *event){
     //如果为文件，则支持拖放
     if (event->mimeData()->hasFormat("text/uri-list"))
@@ -28,7 +40,16 @@ void DragAbleWidget::dropEvent(QDropEvent *event){
 
     //往文本框中追加文件名
     foreach(QUrl url, urls) {
-        QString file_name = url.toLocalFile();
-        SPDLOG_INFO("DragAbleWidget::dropEvent: {}", file_name.toStdString());
+        QString strFilePath = url.toLocalFile();
+        emit fileEntered(strFilePath);
+    }
+}
+
+void DragAbleWidget::mousePressEvent(QMouseEvent *event){
+    if (event->type() == QEvent::MouseButtonDblClick){
+        if (event->button() == Qt::LeftButton){{
+                toggleFullScreen();
+            }
+        }
     }
 }
