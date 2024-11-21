@@ -4,9 +4,13 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QShortcut>
+#include <QMenuBar>
+#include <QFileDialog>
 
 #include "Base/function_transfer.h"
 #include "ui_video_player_widget.h"
+
+#define _ST(str) QString::fromLocal8Bit(str)
 
 VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
     : DragAbleWidget(parent)
@@ -21,40 +25,51 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
 
     m_showVideoWidget = new ShowVideoWidget(this);
 
-    QTimer::singleShot(1000, [&](){
-//        m_player->startPlay("E:\\test.mp4");
-    });
-
-//    QTimer::singleShot(1000, [&](){
-////        m_player->pause();
-//        // m_player->seek(1000000 * 60 * 30);
-//    });
-
     initUI();
+
+    initShortCut();
 }
 
 void VideoPlayerWidget::initUI(){
+
+    initMenuBar();
+
     QVBoxLayout* vLayout = new QVBoxLayout;
 
     m_showVideoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    vLayout->addWidget(m_showVideoWidget);
     vLayout->setContentsMargins(0, 0, 0, 0);
     vLayout->setSpacing(0);
 
+    vLayout->addWidget(m_menuBar);
+    vLayout->addWidget(m_showVideoWidget);
+
     setLayout(vLayout);
+
     resize(200, 150);
 }
 
 void VideoPlayerWidget::initShortCut(){
     // 创建一个快捷键 (Ctrl + S)
-    QShortcut *shortcut = new QShortcut(QKeySequence("ESC"), this);
-
+    QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     // 连接快捷键信号到槽函数
-    connect(shortcut, &QShortcut::activated, [](){
+    connect(shortcut, &QShortcut::activated, [&](){
         if(isFullScreen()){
-
+            // 退出全屏，恢复尺寸
+            showNormal();
+            resize(m_originalSize);  // 恢复到原始尺寸
         }
     });
+}
+
+void VideoPlayerWidget::initMenuBar(){
+    // 菜单栏
+    m_menuBar = new QMenuBar(this);
+    QMenu* menuMedia = m_menuBar->addMenu(_ST("媒体(M)"));
+
+//    menuMedia->addAction(QIcon(QPixmap("d:\\\\qt-logo.png")), "&New", this, SLOT(slotNew()), QKeySequence(tr("CTRL+N")));
+    menuMedia->addAction(_ST("打开文件"), this, &VideoPlayerWidget::onActionOpenFile);
+    menuMedia->addAction(_ST("打开网络串流"));
+//    menuMedia->addAction(_ST(""));
 }
 
 VideoPlayerWidget::~VideoPlayerWidget()
@@ -62,6 +77,30 @@ VideoPlayerWidget::~VideoPlayerWidget()
     delete ui;
 }
 
+void VideoPlayerWidget::onActionOpenFile(){
+    // 设置文件过滤器，支持常见的视频和音频格式
+    QString filter = "Media Files (*.mp4 *.avi *.mkv *.mov *.mp3 *.wav *.flac *.aac);;"
+                     "Video Files (*.mp4 *.avi *.mkv *.mov);;"
+                     "Audio Files (*.mp3 *.wav *.flac *.aac);;"
+                     "All Files (*.*)";
+
+    // 打开文件选择对话框
+    QString fileName = QFileDialog::getOpenFileName(
+        nullptr,
+        "Select a Media File",
+        QDir::homePath(), // 默认目录
+        filter // 应用过滤器
+        );
+
+    // 如果选择了文件，打印文件路径
+    if (fileName.isEmpty()) {
+        SPDLOG_INFO("No file selected{}");
+        return;
+    }
+    SPDLOG_INFO("Selected File: {}", fileName.toStdString());
+
+    m_player->startPlay(fileName.toLocal8Bit().data());
+}
 
 ///打开文件失败
 void VideoPlayerWidget::onOpenVideoFileFailed(const int &code)

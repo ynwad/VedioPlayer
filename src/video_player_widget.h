@@ -2,6 +2,7 @@
 #define VIDEOPLAYERWIDGET_H
 
 #include <QWidget>
+#include <QMenuBar>
 
 #include "VideoPlayer/video_player.h"
 #include "Widget/show_video_widget.h"
@@ -22,6 +23,11 @@ public:
     void initUI();
 
     void initShortCut();
+
+    void initMenuBar();
+
+public slots:
+    void onActionOpenFile();
 
 protected:
     ///打开文件失败
@@ -44,5 +50,8 @@ private:
 
     VideoPlayer *m_player;
     ShowVideoWidget *m_showVideoWidget;
+
+    QMenuBar* m_menuBar;
 };
+
 #endif // VIDEOPLAYERWIDGET_H

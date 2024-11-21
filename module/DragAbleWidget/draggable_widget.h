@@ -36,7 +36,7 @@ protected:
 
     virtual void mousePressEvent(QMouseEvent *event) override;
 
-private:
+protected:
     QString m_strLastEnteredFilePath;
 
     QSize m_originalSize;  // 用于保存窗口原始尺寸

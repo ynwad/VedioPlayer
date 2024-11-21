@@ -9,6 +9,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    src/Widget/selected_media_widget.cpp \
     src/Widget/show_video_widget.cpp \
     src/app_config.cpp \
     src/main.cpp \
@@ -16,6 +17,7 @@ SOURCES += \
     src/Base/function_transfer.cpp
 
 HEADERS += \
+    src/Widget/selected_media_widget.h \
     src/Widget/show_video_widget.h \
     src/app_config.h \
     src/video_player_widget.h \
