@@ -7,8 +7,10 @@
 #include <QMenuBar>
 #include <QFileDialog>
 
+#include "Base/define.h"
 #include "Base/function_transfer.h"
 #include "ui_video_player_widget.h"
+#include "Widget/selected_media_widget.h"
 
 #define _ST(str) QString::fromLocal8Bit(str)
 
@@ -68,8 +70,9 @@ void VideoPlayerWidget::initMenuBar(){
 
 //    menuMedia->addAction(QIcon(QPixmap("d:\\\\qt-logo.png")), "&New", this, SLOT(slotNew()), QKeySequence(tr("CTRL+N")));
     menuMedia->addAction(_ST("打开文件"), this, &VideoPlayerWidget::onActionOpenFile);
-    menuMedia->addAction(_ST("打开网络串流"));
-//    menuMedia->addAction(_ST(""));
+    menuMedia->addAction(_ST("打开网络串流"), [&](){
+        onActionOpenSelectedWidget(0);
+    });
 }
 
 VideoPlayerWidget::~VideoPlayerWidget()
@@ -100,6 +103,16 @@ void VideoPlayerWidget::onActionOpenFile(){
     SPDLOG_INFO("Selected File: {}", fileName.toStdString());
 
     m_player->startPlay(fileName.toLocal8Bit().data());
+}
+
+void VideoPlayerWidget::onActionOpenSelectedWidget(int nTableWidgetIndex){
+    if(nTableWidgetIndex < TableWidget_File_Index || nTableWidgetIndex > TableWidget_Capture_Index){
+        SPDLOG_ERROR("TabWidget 下标设置错误");
+        return;
+    }
+    SelectedMediaWidget* selectedWidget = new SelectedMediaWidget(this);
+    selectedWidget->setAttribute(Qt::WA_DeleteOnClose);
+    selectedWidget->setCurrentIndex(nTableWidgetIndex);
 }
 
 ///打开文件失败

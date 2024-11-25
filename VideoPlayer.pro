@@ -17,6 +17,7 @@ SOURCES += \
     src/Base/function_transfer.cpp
 
 HEADERS += \
+    src/Base/define.h \
     src/Widget/selected_media_widget.h \
     src/Widget/show_video_widget.h \
     src/app_config.h \

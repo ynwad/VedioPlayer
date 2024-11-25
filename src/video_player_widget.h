@@ -29,6 +29,8 @@ public:
 public slots:
     void onActionOpenFile();
 
+    void onActionOpenSelectedWidget(int nTableWidgetIndex);
+
 protected:
     ///打开文件失败
     void onOpenVideoFileFailed(const int &code);
