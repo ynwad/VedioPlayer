@@ -25,11 +25,22 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
     m_player = new VideoPlayer();
     m_player->setVideoPlayerCallBack(this);
 
+    m_animationControlWidget = new QPropertyAnimation(m_videoControllerWidget, "geometry");
+
     m_showVideoWidget = new ShowVideoWidget(this);
+
+    m_videoControllerWidget = new VideoControllerWIdget(this);
+    m_videoControllerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_videoControllerWidget->setFixedHeight(40);
 
     initUI();
 
     initShortCut();
+}
+
+VideoPlayerWidget::~VideoPlayerWidget()
+{
+    delete ui;
 }
 
 void VideoPlayerWidget::initUI(){
@@ -38,15 +49,18 @@ void VideoPlayerWidget::initUI(){
 
     QVBoxLayout* vLayout = new QVBoxLayout;
 
+    vLayout->addWidget(m_menuBar);
+    vLayout->addWidget(m_showVideoWidget);
+//    vLayout->addWidget(m_videoControllerWidget);
+
     m_showVideoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
     vLayout->setContentsMargins(0, 0, 0, 0);
     vLayout->setSpacing(0);
 
-    vLayout->addWidget(m_menuBar);
-    vLayout->addWidget(m_showVideoWidget);
-
     setLayout(vLayout);
 
+    m_videoControllerWidget->move(0, height() - m_videoControllerWidget->height());
     resize(200, 150);
 }
 
@@ -75,9 +89,39 @@ void VideoPlayerWidget::initMenuBar(){
     });
 }
 
-VideoPlayerWidget::~VideoPlayerWidget()
-{
-    delete ui;
+void VideoPlayerWidget::showOutControlWidget(){
+    m_animationControlWidget->setDuration(1000);
+
+    int w = m_videoControllerWidget->width();
+    int h = m_videoControllerWidget->height();
+    int x = 0;
+    int y = height() - m_videoControllerWidget->height();
+
+    if(m_videoControllerWidget->isHidden()){
+        m_videoControllerWidget->show();
+    }
+    m_animationControlWidget->setStartValue(m_videoControllerWidget->geometry());
+
+    m_animationControlWidget->setEndValue(QRect(x, y, w, h));
+    m_animationControlWidget->setEasingCurve(QEasingCurve::Linear);
+
+    m_animationControlWidget->start();
+}
+
+void VideoPlayerWidget::hideControlWidget(){
+    m_animationControlWidget->setTargetObject(m_videoControllerWidget);
+    m_animationControlWidget->setDuration(300);
+
+    int w = m_videoControllerWidget->width();
+    int h = m_videoControllerWidget->height();
+    int x = 0;
+    int y = height() + h;
+
+    m_animationControlWidget->setStartValue(m_videoControllerWidget->geometry());
+    m_animationControlWidget->setEndValue(QRect(x, y, w, h));
+    m_animationControlWidget->setEasingCurve(QEasingCurve::Linear);
+
+    m_animationControlWidget->start();
 }
 
 void VideoPlayerWidget::onActionOpenFile(){

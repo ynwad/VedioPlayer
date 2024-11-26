@@ -8,6 +8,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QComboBox>
 #include "Base/define.h"
 
 SelectedMediaWidget::SelectedMediaWidget(QWidget *parent)
@@ -18,8 +19,8 @@ SelectedMediaWidget::SelectedMediaWidget(QWidget *parent)
     // 创建 TabWidget
     m_tabWidget = new QTabWidget(this);
     m_tabWidget->insertTab(TableWidget_File_Index, createFileTab(), _ST("文件"));
-    m_tabWidget->insertTab(TableWidget_Network_Index, new QWidget(), _ST("网络"));
-    m_tabWidget->insertTab(TableWidget_Capture_Index, new QWidget(), _ST("捕获设备"));
+    m_tabWidget->insertTab(TableWidget_Network_Index, createNetworkTab(), _ST("网络"));
+    m_tabWidget->insertTab(TableWidget_Capture_Index, createCaptureDevTab(), _ST("捕获设备"));
 
     // 底部按钮
     QPushButton *playButton = new QPushButton(_ST("播放"));
@@ -45,6 +46,7 @@ QWidget* SelectedMediaWidget::createFileTab() {
 
     // 文件选择区域
     QListWidget *fileList = new QListWidget;
+
     QPushButton *addButton = new QPushButton(_ST("添加..."));
     QPushButton *removeButton = new QPushButton(_ST("移除"));
 
@@ -83,4 +85,33 @@ QWidget* SelectedMediaWidget::createFileTab() {
     });
 
     return fileTab;
+}
+
+QWidget* SelectedMediaWidget::createNetworkTab(){
+    QWidget *networkTab = new QWidget();
+    QVBoxLayout *networkLayout = new QVBoxLayout(networkTab);
+    networkLayout->addWidget(new QLabel(_ST("请输入网络 URL:")));
+    QLineEdit *urlInput = new QLineEdit();
+    networkLayout->addWidget(urlInput);
+
+    return networkTab;
+}
+
+QWidget* SelectedMediaWidget::createCaptureDevTab(){
+    QWidget *captureTab = new QWidget();
+    QVBoxLayout *captureLayout = new QVBoxLayout(captureTab);
+    captureLayout->addWidget(new QLabel(_ST("捕获模式:")));
+    QComboBox *captureModeComboBox = new QComboBox();
+    captureModeComboBox->addItems({"DirectShow", _ST("其他模式")});
+    captureLayout->addWidget(captureModeComboBox);
+    captureLayout->addWidget(new QLabel(_ST("视频设备名称:")));
+    captureLayout->addWidget(new QComboBox());
+    captureLayout->addWidget(new QLabel(_ST("音频设备名称:")));
+    captureLayout->addWidget(new QComboBox());
+    captureLayout->addWidget(new QLabel(_ST("视频大小:")));
+    captureLayout->addWidget(new QLineEdit());
+    QPushButton *advancedOptionsButton = new QPushButton(_ST("高级选项..."));
+    captureLayout->addWidget(advancedOptionsButton);
+
+    return captureTab;
 }

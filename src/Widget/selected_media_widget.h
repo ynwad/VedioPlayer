@@ -18,6 +18,10 @@ public:
 private:
     QWidget* createFileTab();
 
+    QWidget* createNetworkTab();
+
+    QWidget* createCaptureDevTab();
+
 signals:
 
 private:

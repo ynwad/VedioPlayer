@@ -11,6 +11,8 @@ CONFIG += c++17
 SOURCES += \
     src/Widget/selected_media_widget.cpp \
     src/Widget/show_video_widget.cpp \
+    src/Widget/video_controller_widget.cpp \
+    src/Widget/video_slider.cpp \
     src/app_config.cpp \
     src/main.cpp \
     src/video_player_widget.cpp \
@@ -20,6 +22,8 @@ HEADERS += \
     src/Base/define.h \
     src/Widget/selected_media_widget.h \
     src/Widget/show_video_widget.h \
+    src/Widget/video_controller_widget.h \
+    src/Widget/video_slider.h \
     src/app_config.h \
     src/video_player_widget.h \
     src/Base/function_transfer.h
@@ -37,3 +41,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 include(module/VideoPlayer/VideoPlayer.pri)
 
 include(module/DragAbleWidget/DragAbleWidget.pri)
+
+RESOURCES += \
+    resource.qrc

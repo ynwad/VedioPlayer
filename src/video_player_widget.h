@@ -3,10 +3,12 @@
 
 #include <QWidget>
 #include <QMenuBar>
+#include <QPropertyAnimation>
 
 #include "VideoPlayer/video_player.h"
 #include "Widget/show_video_widget.h"
 #include "draggable_widget.h"
+#include "Widget/video_controller_widget.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class VideoPlayerWidget; }
@@ -25,6 +27,11 @@ public:
     void initShortCut();
 
     void initMenuBar();
+
+private:
+    void showOutControlWidget(); //显示底部控制控件
+
+    void hideControlWidget();    //隐藏底部控制控件
 
 public slots:
     void onActionOpenFile();
@@ -52,6 +59,8 @@ private:
 
     VideoPlayer *m_player;
     ShowVideoWidget *m_showVideoWidget;
+    VideoControllerWidget *m_videoControllerWidget;
+    QPropertyAnimation *m_animationControlWidget;   //控制底部控制控件的出现和隐藏
 
     QMenuBar* m_menuBar;
 };
