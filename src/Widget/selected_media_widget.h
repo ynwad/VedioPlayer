@@ -22,10 +22,19 @@ private:
 
     QWidget* createCaptureDevTab();
 
+public slots:
+    void on_BtnPlayClicked();
+
 signals:
+    void signal_playMedia(QStringList lstPath);
 
 private:
     QTabWidget *m_tabWidget;
+
+    QPushButton *playButton;
+    QPushButton *cancelButton;
+
+    QStringList m_lstWaitingList;
 };
 
 #endif // SELECTEDMEDIAWIDGET_H

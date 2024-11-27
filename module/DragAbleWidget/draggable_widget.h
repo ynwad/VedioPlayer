@@ -9,6 +9,7 @@
 
 #include <QWidget>
 #include <QTimer>
+#include <QMenuBar>
 
 //鼠标实现改变窗口大小
 #define PADDING 6
@@ -35,6 +36,8 @@ protected:
     virtual void dropEvent(QDropEvent *event) override;
 
     virtual void mousePressEvent(QMouseEvent *event) override;
+
+    virtual QMenuBar* menuBar();
 
 protected:
     QString m_strLastEnteredFilePath;

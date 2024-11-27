@@ -2,7 +2,6 @@
 #define VIDEOSLIDER_H
 
 #include <QSlider>
-#include <QTimer>
 
 class VideoSlider : public QSlider
 {
@@ -12,7 +11,10 @@ public:
 
     ~VideoSlider();
 
+    void setValue(int nValue);
+
 signals:
+    void signal_valueChanged(int nValue);
 
 protected:
     void resizeEvent(QResizeEvent *);
@@ -27,13 +29,8 @@ protected:
 
     void leaveEvent(QEvent *);
 
-private slots:
-    void onTimerTimeOut();
-
 private:
     int m_nPosX;
-
-    QTimer *m_timer;
 };
 
 #endif // VIDEOSLIDER_H

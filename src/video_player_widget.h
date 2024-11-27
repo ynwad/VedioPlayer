@@ -28,6 +28,8 @@ public:
 
     void initMenuBar();
 
+    void initSigSlots();
+
 private:
     void showOutControlWidget(); //显示底部控制控件
 
@@ -37,22 +39,35 @@ public slots:
     void onActionOpenFile();
 
     void onActionOpenSelectedWidget(int nTableWidgetIndex);
+//    void signal_playMedia(QStringList lstPath)
+    void on_PlaplayMedia(QStringList lstPath);
+
+    void slotVideoSliderMoved(int nValue);
+
+    void slotAudioSliderMoved(int nValue);
+
+    void slotProgressTimeOut();
 
 protected:
+    virtual QMenuBar* menuBar() override;
+
+    virtual void resizeEvent(QResizeEvent *event) override;
+
+    virtual void mouseMoveEvent(QMouseEvent *event) override;
     ///打开文件失败
-    void onOpenVideoFileFailed(const int &code);
+    virtual void onOpenVideoFileFailed(const int &code) override;
 
     ///打开sdl失败的时候回调此函数
-    void onOpenSdlFailed(const int &code);
+    virtual void onOpenSdlFailed(const int &code) override;
 
     ///获取到视频时长的时候调用此函数
-    void onTotalTimeChanged(const int64_t &uSec);
+    virtual void onTotalTimeChanged(const int64_t &uSec) override;
 
     ///播放器状态改变的时候回调此函数
-    void onPlayerStateChanged(const VideoPlayerState &state, const bool &hasVideo, const bool &hasAudio);
+    virtual void onPlayerStateChanged(const VideoPlayerState &state, const bool &hasVideo, const bool &hasAudio) override;
 
     ///显示视频数据，此函数不宜做耗时操作，否则会影响播放的流畅性。
-    void onDisplayVideo(VideoFrame::ptr videoFrame);
+    virtual void onDisplayVideo(VideoFrame::ptr videoFrame) override;
 
 private:
     Ui::VideoPlayerWidget *ui;
@@ -63,6 +78,8 @@ private:
     QPropertyAnimation *m_animationControlWidget;   //控制底部控制控件的出现和隐藏
 
     QMenuBar* m_menuBar;
+    bool m_bVideoCtlWidgetShow{false};
+    QTimer *m_progressTimer;
 };
 
 #endif // VIDEOPLAYERWIDGET_H

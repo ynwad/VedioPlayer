@@ -7,6 +7,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     VideoPlayerWidget w;
+    w.move(200, 700);
 //    VideoControllerWIdget w;
     w.show();
     return a.exec();

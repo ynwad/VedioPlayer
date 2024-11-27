@@ -39,12 +39,11 @@ public:
 
 protected:
     //刷新显示
-    void paintGL() override;
+    virtual void paintGL() override;
     //初始化GL
-    void initializeGL() override;
+    virtual void initializeGL() override;
     //窗口尺寸变化
-    void resizeGL(int width,int height) override;
-
+    virtual void resizeGL(int width,int height) override;
 private:
     void resetTexturePara();
 

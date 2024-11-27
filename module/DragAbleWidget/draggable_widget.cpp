@@ -17,11 +17,17 @@ void DragAbleWidget::toggleFullScreen(){
     if (isFullScreen()) {
         // ÍË³öÈ«ÆÁ£¬»Ö¸´³ß´ç
         showNormal();
+        if(menuBar() != nullptr){
+            menuBar()->setVisible(true); // Òþ²Ø²Ëµ¥À¸
+        }
         resize(m_originalSize);  // »Ö¸´µ½Ô­Ê¼³ß´ç
     } else {
         // ¼ÇÂ¼µ±Ç°³ß´ç²¢ÇÐ»»µ½È«ÆÁÄ£Ê½
         m_originalSize = size();
         showFullScreen();
+        if(menuBar() != nullptr){
+            menuBar()->setVisible(false); // Òþ²Ø²Ëµ¥À¸
+        }
     }
 }
 
@@ -52,4 +58,8 @@ void DragAbleWidget::mousePressEvent(QMouseEvent *event){
             }
         }
     }
+}
+
+QMenuBar* DragAbleWidget::menuBar(){
+    return nullptr;
 }

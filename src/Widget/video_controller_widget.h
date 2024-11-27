@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPushButton>
 #include <QSlider>
+#include <QLabel>
 #include "video_slider.h"
 
 class VideoControllerWidget : public QWidget
@@ -16,11 +17,28 @@ public:
 
     void initUI();
 
-signals:
+    void setVideoSliderRange(int nMinVal, int nMaxVal);
 
+    void setVideoSliderValue(int nCurVal);
+
+    void setVideoSliderTotalTime(QString strTotalTime);
+
+    void setVideoSliderCurTime(QString strCurTime);
+protected:
+    virtual void mouseMoveEvent(QMouseEvent *event) override;
+
+    virtual void enterEvent(QEvent *event) override;
+
+    virtual void leaveEvent(QEvent *event) override;
+signals:
+//    void notifyMouseEnter();
+
+//    void notifyMouseLeave();
 private:
     VideoSlider *m_videoSlider;
     QSlider *m_audioSlider;
+    QLabel* m_sliderTotalLable;
+    QLabel* m_sliderCurTimeLable;
 
     QPushButton *m_btnPlayPause;
     QPushButton *m_btnFastForward;  // 快进

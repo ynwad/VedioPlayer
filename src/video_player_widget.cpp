@@ -15,9 +15,7 @@
 #define _ST(str) QString::fromLocal8Bit(str)
 
 VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
-    : DragAbleWidget(parent)
-    , ui(new Ui::VideoPlayerWidget)
-{
+    : DragAbleWidget(parent){
 //    ui->setupUi(this);
 
     FunctionTransfer::init(QThread::currentThreadId());
@@ -25,21 +23,29 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
     m_player = new VideoPlayer();
     m_player->setVideoPlayerCallBack(this);
 
+    m_showVideoWidget = new ShowVideoWidget(this);
+    m_showVideoWidget->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    m_showVideoWidget->setMouseTracking(true);
+
+    setMouseTracking(true);
+    setAttribute(Qt::WA_TransparentForMouseEvents, true);
+
+    m_videoControllerWidget = new VideoControllerWidget(this);
+
     m_animationControlWidget = new QPropertyAnimation(m_videoControllerWidget, "geometry");
 
-    m_showVideoWidget = new ShowVideoWidget(this);
-
-    m_videoControllerWidget = new VideoControllerWIdget(this);
-    m_videoControllerWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    m_videoControllerWidget->setFixedHeight(40);
+    m_progressTimer = new QTimer(this);
+    connect(m_progressTimer, &QTimer::timeout, this, &VideoPlayerWidget::slotProgressTimeOut);
+    m_progressTimer->setInterval(500);
 
     initUI();
 
     initShortCut();
+
+    initSigSlots();
 }
 
-VideoPlayerWidget::~VideoPlayerWidget()
-{
+VideoPlayerWidget::~VideoPlayerWidget(){
     delete ui;
 }
 
@@ -51,7 +57,6 @@ void VideoPlayerWidget::initUI(){
 
     vLayout->addWidget(m_menuBar);
     vLayout->addWidget(m_showVideoWidget);
-//    vLayout->addWidget(m_videoControllerWidget);
 
     m_showVideoWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
@@ -60,8 +65,7 @@ void VideoPlayerWidget::initUI(){
 
     setLayout(vLayout);
 
-    m_videoControllerWidget->move(0, height() - m_videoControllerWidget->height());
-    resize(200, 150);
+    resize(400, 250);
 }
 
 void VideoPlayerWidget::initShortCut(){
@@ -89,7 +93,19 @@ void VideoPlayerWidget::initMenuBar(){
     });
 }
 
+void VideoPlayerWidget::initSigSlots(){
+//    void notifyMouseEnter();
+//    on_PlaplayMedia
+
+//    void notifyMouseLeave();
+
+}
+
 void VideoPlayerWidget::showOutControlWidget(){
+    if(m_bVideoCtlWidgetShow){
+        return;
+    }
+    m_bVideoCtlWidgetShow = true;
     m_animationControlWidget->setDuration(1000);
 
     int w = m_videoControllerWidget->width();
@@ -109,8 +125,12 @@ void VideoPlayerWidget::showOutControlWidget(){
 }
 
 void VideoPlayerWidget::hideControlWidget(){
+    if(!m_bVideoCtlWidgetShow){
+        return;
+    }
+    m_bVideoCtlWidgetShow = false;
     m_animationControlWidget->setTargetObject(m_videoControllerWidget);
-    m_animationControlWidget->setDuration(300);
+    m_animationControlWidget->setDuration(1000);
 
     int w = m_videoControllerWidget->width();
     int h = m_videoControllerWidget->height();
@@ -157,6 +177,72 @@ void VideoPlayerWidget::onActionOpenSelectedWidget(int nTableWidgetIndex){
     SelectedMediaWidget* selectedWidget = new SelectedMediaWidget(this);
     selectedWidget->setAttribute(Qt::WA_DeleteOnClose);
     selectedWidget->setCurrentIndex(nTableWidgetIndex);
+
+    connect(selectedWidget, &SelectedMediaWidget::signal_playMedia, this, &VideoPlayerWidget::on_PlaplayMedia);
+}
+
+void VideoPlayerWidget::on_PlaplayMedia(QStringList lstPath){
+    qDebug() << "播放列表： " << lstPath;
+    m_player->startPlay(lstPath[0].toStdString());
+}
+
+void VideoPlayerWidget::slotVideoSliderMoved(int nValue){
+    m_player->seek((qint64)nValue * 1000000);
+}
+
+void VideoPlayerWidget::slotAudioSliderMoved(int nValue){
+    m_player->setVolume(nValue / 100.0);
+}
+
+void VideoPlayerWidget::slotProgressTimeOut(){
+    qint64 Sec = m_player->getCurrentTime();
+
+    m_videoControllerWidget->setVideoSliderValue(Sec);
+
+    QString curTime;
+    QString hStr = QString("0%1").arg(Sec / 3600);
+    QString mStr = QString("0%1").arg(Sec / 60 % 60);
+    QString sStr = QString("0%1").arg(Sec % 60);
+    if (hStr == "00")
+    {
+        curTime = QString("%1:%2").arg(mStr.right(2)).arg(sStr.right(2));
+    }
+    else
+    {
+        curTime = QString("%1:%2:%3").arg(hStr).arg(mStr.right(2)).arg(sStr.right(2));
+    }
+
+    m_videoControllerWidget->setVideoSliderCurTime(curTime);
+}
+
+QMenuBar* VideoPlayerWidget::menuBar(){
+    return m_menuBar;
+}
+
+void VideoPlayerWidget::resizeEvent(QResizeEvent *event){
+    m_videoControllerWidget->setFixedHeight(100);
+    m_videoControllerWidget->setFixedWidth(width());
+    if(m_bVideoCtlWidgetShow){
+        m_videoControllerWidget->move(0, height() - m_videoControllerWidget->height());
+    }
+    else{
+        m_videoControllerWidget->move(0, height());
+    }
+
+    QWidget::resizeEvent(event);
+}
+
+void VideoPlayerWidget::mouseMoveEvent(QMouseEvent *event){
+    int nMouseY = event->y();
+    int nVideoControlWidgetY = height() - m_videoControllerWidget->height();
+    if(nMouseY > nVideoControlWidgetY){
+        showOutControlWidget();
+    }
+    else{
+//        QTimer::singleShot(1000, [&](){
+            hideControlWidget();
+//        });
+    }
 }
 
 ///打开文件失败
@@ -181,29 +267,39 @@ void VideoPlayerWidget::onTotalTimeChanged(const int64_t &uSec)
     FunctionTransfer::runInMainThread([=](){
         qint64 Sec = uSec/1000000;
 
-//        ui->horizontalSlider->setRange(0,Sec);
+        m_videoControllerWidget->setVideoSliderRange(0, Sec);
 
         QString totalTime;
-        QString hStr = QString("0%1").arg(Sec/3600);
+        QString hStr = QString("0%1").arg(Sec / 3600);
         QString mStr = QString("0%1").arg(Sec / 60 % 60);
         QString sStr = QString("0%1").arg(Sec % 60);
         if (hStr == "00")
         {
-//            otalTime = QString("%1:%2").arg(mStr.right(2)).arg(sStr.right(2));
+            totalTime = QString("%1:%2").arg(mStr.right(2)).arg(sStr.right(2));
         }
         else
         {
-          totalTime = QString("%1:%2:%3").arg(hStr).arg(mStr.right(2)).arg(sStr.right(2));
+            totalTime = QString("%1:%2:%3").arg(hStr).arg(mStr.right(2)).arg(sStr.right(2));
         }
 
-//        ui->label_totaltime->setText(totalTime);
+        m_videoControllerWidget->setVideoSliderTotalTime(totalTime);
     });
 }
 
 ///播放器状态改变的时候回调此函数
 void VideoPlayerWidget::onPlayerStateChanged(const VideoPlayerState &state, const bool &hasVideo, const bool &hasAudio)
 {
+    FunctionTransfer::runInMainThread([=](){
+        if(state == VideoPlayer_Stop){
+            m_progressTimer->stop();
+        }
+        else if(state == VideoPlayer_Playing){
+            m_progressTimer->start();
+        }
+        else if(state == VideoPlayer_Pause){
 
+        }
+    });
 }
 
 ///显示视频数据，此函数不宜做耗时操作，否则会影响播放的流畅性。

@@ -466,7 +466,17 @@ void VideoPlayer::seek(int64_t pos){
     }
 }
 
-int64_t VideoPlayer::getTotalTime(){
+void VideoPlayer::setVolume(float value){
+    m_fVolume = value;
+}
+
+double VideoPlayer::getCurrentTime()
+{
+    return m_audio_clock;
+}
+
+int64_t VideoPlayer::getTotalTime()
+{
     return pFormatCtx->duration;
 }
 

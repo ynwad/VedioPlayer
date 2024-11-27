@@ -23,8 +23,8 @@ SelectedMediaWidget::SelectedMediaWidget(QWidget *parent)
     m_tabWidget->insertTab(TableWidget_Capture_Index, createCaptureDevTab(), _ST("捕获设备"));
 
     // 底部按钮
-    QPushButton *playButton = new QPushButton(_ST("播放"));
-    QPushButton *cancelButton = new QPushButton(_ST("取消"));
+    playButton = new QPushButton(_ST("播放"));
+    cancelButton = new QPushButton(_ST("取消"));
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addStretch();
     buttonLayout->addWidget(playButton);
@@ -35,9 +35,11 @@ SelectedMediaWidget::SelectedMediaWidget(QWidget *parent)
     mainLayout->addWidget(m_tabWidget);
     mainLayout->addLayout(buttonLayout);
     show();
-//    connect(playButton, &QPushButton::clicked, this, &SelectedMediaWidget::accept);
-//    connect(cancelButton, &QPushButton::clicked, this, &SelectedMediaWidget::reject);
-
+    connect(m_tabWidget, &QTabWidget::currentChanged, [&](){
+        m_lstWaitingList.clear();
+    });
+    connect(playButton, &QPushButton::clicked, this, &SelectedMediaWidget::on_BtnPlayClicked);
+    connect(cancelButton, &QPushButton::clicked, this, &SelectedMediaWidget::reject);
 }
 
 QWidget* SelectedMediaWidget::createFileTab() {
@@ -45,7 +47,7 @@ QWidget* SelectedMediaWidget::createFileTab() {
     fileTab->setAttribute(Qt::WA_DeleteOnClose);
 
     // 文件选择区域
-    QListWidget *fileList = new QListWidget;
+    QListWidget *fileList = new QListWidget();
 
     QPushButton *addButton = new QPushButton(_ST("添加..."));
     QPushButton *removeButton = new QPushButton(_ST("移除"));
@@ -74,10 +76,11 @@ QWidget* SelectedMediaWidget::createFileTab() {
     fileTabLayout->addStretch();
 
     // 添加按钮功能
-    connect(addButton, &QPushButton::clicked, this, [fileList] {
+    connect(addButton, &QPushButton::clicked, this, [this, fileList] {
         QString filePath = QFileDialog::getOpenFileName();
         if (!filePath.isEmpty()) {
             fileList->addItem(filePath);
+            this->m_lstWaitingList.append(filePath);
         }
     });
     connect(removeButton, &QPushButton::clicked, fileList, [fileList] {
@@ -94,6 +97,10 @@ QWidget* SelectedMediaWidget::createNetworkTab(){
     QLineEdit *urlInput = new QLineEdit();
     networkLayout->addWidget(urlInput);
 
+    connect(urlInput, &QLineEdit::editingFinished, [this, urlInput](){
+        QString strUrl = urlInput->text();
+        m_lstWaitingList.append(strUrl);
+    });
     return networkTab;
 }
 
@@ -114,4 +121,15 @@ QWidget* SelectedMediaWidget::createCaptureDevTab(){
     captureLayout->addWidget(advancedOptionsButton);
 
     return captureTab;
+}
+
+void SelectedMediaWidget::on_BtnPlayClicked(){
+    int nIndex = m_tabWidget->currentIndex();
+    if(nIndex == 0 || nIndex == 1){
+        emit signal_playMedia(m_lstWaitingList);
+    }
+    else if(nIndex == 2){
+
+    }
+    accept();
 }

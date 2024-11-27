@@ -57,9 +57,6 @@ public:
     /// 开始播放
     bool startPlay(const std::string &strFilePath);
 
-    // 获取视频总长度
-    int64_t getTotalTime(); //单位微秒
-
     //播放（用于暂停后，重新开始播放）
     bool play();
 
@@ -71,6 +68,13 @@ public:
 
     /// 跳转到指定位置播放
     void seek(int64_t pos); //单位是微秒
+
+    void setMute(bool isMute){m_bIsMute = isMute;}
+    void setVolume(float value);
+    float getVolume(){return m_fVolume;}
+
+    int64_t getTotalTime(); //单位微秒
+    double getCurrentTime(); //单位秒
 
 private:
     ///回调函数

@@ -1,9 +1,9 @@
 ﻿#include "video_controller_widget.h"
 #include <QHBoxLayout>
 
-VideoControllerWidget::VideoControllerWIdget(QWidget *parent)
+VideoControllerWidget::VideoControllerWidget(QWidget *parent)
     : QWidget(parent){
-//    setStyleSheet("background-color: black;");
+//    setStyleSheet("background-color: blue;");
     setAttribute(Qt::WA_TranslucentBackground);  // 设置背景透明
 //    setAttribute(Qt::WA_StyledBackground, true);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -14,6 +14,14 @@ VideoControllerWidget::VideoControllerWIdget(QWidget *parent)
     m_audioSlider->setSliderPosition(Qt::Vertical);
     m_audioSlider->setMinimum(0);
     m_audioSlider->setMaximum(100);
+
+    m_sliderTotalLable = new QLabel("00:00");
+    m_sliderTotalLable->setMinimumWidth(50);
+    m_sliderTotalLable->setStyleSheet("color: rgb(214, 214, 214);");
+
+    m_sliderCurTimeLable = new QLabel("00:00");
+    m_sliderCurTimeLable->setMinimumWidth(50);
+    m_sliderCurTimeLable->setStyleSheet("color: rgb(214, 214, 214);");
 
     m_btnPlayPause = new QPushButton();
     // 使用样式表设置背景图片
@@ -55,33 +63,77 @@ VideoControllerWidget::VideoControllerWIdget(QWidget *parent)
     m_btnStop->setStyleSheet(
         "QPushButton {"
         "   border: none;"  // 移除边框
-        "   background-image: url(:/image/resource/image/video.png);"  // 设置背景图片
+        "   background-image: url(:/image/resource/image/pause.png);"  // 设置背景图片
         "   background-repeat: no-repeat;"
         "   background-position: center;"  // 居中显示
         "}"
         );
-    m_btnStop->setStyleSheet("QPushButton { margin: 0; padding: 0; }"); // 清除边距和内边距
     m_btnStop->setFixedSize(45, 45);
 
     initUI();
 #endif
+    connect(m_audioSlider, SIGNAL(valueChanged(int)), parent, SLOT(slotAudioSliderMoved(int)));
+    connect(m_videoSlider, SIGNAL(valueChanged(int)), parent, SLOT(slotVideoSliderMoved(int)));
 }
 
-VideoControllerWIdget::~VideoControllerWIdget(){
+VideoControllerWidget::~VideoControllerWidget(){
 
 }
 
-void VideoControllerWIdget::initUI(){
-    QHBoxLayout* mainLayout = new QHBoxLayout();
+void VideoControllerWidget::initUI(){
+    QHBoxLayout* sliderLayout = new QHBoxLayout();
+    sliderLayout->addWidget(m_videoSlider);
+    //    QLabel* m_sliderTotalLable;
+    //    QLabel* m_sliderCurTimeLable;
+    sliderLayout->addWidget(m_sliderCurTimeLable);
+    QLabel* labelSeparator = new QLabel("/");
+    labelSeparator->setStyleSheet("color: rgb(214, 214, 214);");
+    sliderLayout->addWidget(labelSeparator);
+    sliderLayout->addWidget(m_sliderTotalLable);
 
-    mainLayout->addWidget(m_btnStop);
-    mainLayout->addWidget(M_btnFastBackward);
-    mainLayout->addWidget(m_btnPlayPause);
-    mainLayout->addWidget(m_btnFastForward);
-    mainLayout->addWidget(m_videoSlider);
-    mainLayout->addWidget(m_audioSlider);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
+    QHBoxLayout* hLayout = new QHBoxLayout();
+    hLayout->addWidget(m_btnStop);
+    hLayout->addWidget(M_btnFastBackward);
+    hLayout->addWidget(m_btnPlayPause);
+    hLayout->addWidget(m_btnFastForward);
+    hLayout->addStretch();
+    hLayout->addWidget(m_audioSlider);
+    hLayout->setContentsMargins(40, 0, 40, 0);
+    hLayout->setSpacing(40);
+
+    QVBoxLayout* mainLayout = new QVBoxLayout();
+    mainLayout->addLayout(sliderLayout);
+    mainLayout->addLayout(hLayout);
 
     setLayout(mainLayout);
+}
+
+void VideoControllerWidget::setVideoSliderRange(int nMinVal, int nMaxVal){
+    m_videoSlider->setRange(nMinVal, nMaxVal);
+}
+
+void VideoControllerWidget::setVideoSliderValue(int nCurVal){
+    m_videoSlider->setValue(nCurVal);
+}
+
+void VideoControllerWidget::setVideoSliderTotalTime(QString strTotalTime){
+    m_sliderTotalLable->setText(strTotalTime);
+}
+
+void VideoControllerWidget::setVideoSliderCurTime(QString strCurTime){
+    m_sliderCurTimeLable->setText(strCurTime);
+}
+
+void VideoControllerWidget::mouseMoveEvent(QMouseEvent *event){
+    QWidget::mouseMoveEvent(event);
+}
+
+void VideoControllerWidget::enterEvent(QEvent *event){
+//    emit notifyMouseEnter();
+    QWidget::enterEvent(event);
+}
+
+void VideoControllerWidget::leaveEvent(QEvent *event){
+//    emit notifyMouseLeave();
+    QWidget::leaveEvent(event);
 }
