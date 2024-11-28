@@ -24,6 +24,16 @@ public:
     void setVideoSliderTotalTime(QString strTotalTime);
 
     void setVideoSliderCurTime(QString strCurTime);
+
+    // 设置为播放状态
+    void setPlayStatus();
+
+    // 设置为暂停状态
+    void setPauseStatus();
+
+public slots:
+    void slot_btnPlayPauseClicked(bool bChecked);
+
 protected:
     virtual void mouseMoveEvent(QMouseEvent *event) override;
 

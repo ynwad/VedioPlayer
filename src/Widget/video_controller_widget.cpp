@@ -1,5 +1,10 @@
 ﻿#include "video_controller_widget.h"
 #include <QHBoxLayout>
+#include <QVariant>
+
+#define PlayStatus "playStatus"
+#define Play "play"
+#define Pause "pause"
 
 VideoControllerWidget::VideoControllerWidget(QWidget *parent)
     : QWidget(parent){
@@ -24,6 +29,7 @@ VideoControllerWidget::VideoControllerWidget(QWidget *parent)
     m_sliderCurTimeLable->setStyleSheet("color: rgb(214, 214, 214);");
 
     m_btnPlayPause = new QPushButton();
+    m_btnPlayPause->setProperty(PlayStatus, Pause);
     // 使用样式表设置背景图片
     m_btnPlayPause->setStyleSheet(
         "QPushButton {"
@@ -73,7 +79,13 @@ VideoControllerWidget::VideoControllerWidget(QWidget *parent)
     initUI();
 #endif
     connect(m_audioSlider, SIGNAL(valueChanged(int)), parent, SLOT(slotAudioSliderMoved(int)));
-    connect(m_videoSlider, SIGNAL(valueChanged(int)), parent, SLOT(slotVideoSliderMoved(int)));
+    connect(m_videoSlider, SIGNAL(signal_valueChanged(int)), parent, SLOT(slotVideoSliderMoved(int)));
+
+//    QPushButton *m_btnPlayPause;
+//    QPushButton *m_btnFastForward;  // 快进
+//    QPushButton *M_btnFastBackward; // 快退
+//    QPushButton *m_btnStop;
+    connect(m_btnPlayPause, &QPushButton::clicked, this, &VideoControllerWidget::slot_btnPlayPauseClicked);
 }
 
 VideoControllerWidget::~VideoControllerWidget(){
@@ -122,6 +134,25 @@ void VideoControllerWidget::setVideoSliderTotalTime(QString strTotalTime){
 
 void VideoControllerWidget::setVideoSliderCurTime(QString strCurTime){
     m_sliderCurTimeLable->setText(strCurTime);
+}
+
+void VideoControllerWidget::setPlayStatus(){
+    m_btnPlayPause->setProperty(PlayStatus, Play);
+}
+
+void VideoControllerWidget::setPauseStatus(){
+    m_btnPlayPause->setProperty(PlayStatus, Pause);
+}
+
+void VideoControllerWidget::slot_btnPlayPauseClicked(bool bChecked){
+    QString strCurStatus = m_btnPlayPause->property(PlayStatus).toString();
+
+    if(strCurStatus == Play){
+        QMetaObject::invokeMethod(parent(), "slotPause");
+    }
+    else if(strCurStatus == Pause){
+        QMetaObject::invokeMethod(parent(), "slotPlay");
+    }
 }
 
 void VideoControllerWidget::mouseMoveEvent(QMouseEvent *event){

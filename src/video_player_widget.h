@@ -10,9 +10,9 @@
 #include "draggable_widget.h"
 #include "Widget/video_controller_widget.h"
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class VideoPlayerWidget; }
-QT_END_NAMESPACE
+//QT_BEGIN_NAMESPACE
+//namespace Ui { class VideoPlayerWidget; }
+//QT_END_NAMESPACE
 
 class VideoPlayerWidget : public DragAbleWidget, public VideoPlayerCallBack
 {
@@ -42,6 +42,11 @@ public slots:
 //    void signal_playMedia(QStringList lstPath)
     void on_PlaplayMedia(QStringList lstPath);
 
+    // 暂停/播放
+    void slotPlay();
+
+    void slotPause();
+
     void slotVideoSliderMoved(int nValue);
 
     void slotAudioSliderMoved(int nValue);
@@ -70,7 +75,6 @@ protected:
     virtual void onDisplayVideo(VideoFrame::ptr videoFrame) override;
 
 private:
-    Ui::VideoPlayerWidget *ui;
 
     VideoPlayer *m_player;
     ShowVideoWidget *m_showVideoWidget;

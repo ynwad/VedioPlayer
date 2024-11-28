@@ -28,8 +28,8 @@ HEADERS += \
     src/video_player_widget.h \
     src/Base/function_transfer.h
 
-FORMS += \
-    src/video_player_widget.ui
+#FORMS += \
+#    src/video_player_widget.ui
 
 INCLUDEPATH += $$PWD/src
 

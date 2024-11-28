@@ -9,7 +9,7 @@
 
 #include "Base/define.h"
 #include "Base/function_transfer.h"
-#include "ui_video_player_widget.h"
+//#include "ui_video_player_widget.h"
 #include "Widget/selected_media_widget.h"
 
 #define _ST(str) QString::fromLocal8Bit(str)
@@ -46,7 +46,7 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
 }
 
 VideoPlayerWidget::~VideoPlayerWidget(){
-    delete ui;
+//    delete ui;
 }
 
 void VideoPlayerWidget::initUI(){
@@ -186,6 +186,14 @@ void VideoPlayerWidget::on_PlaplayMedia(QStringList lstPath){
     m_player->startPlay(lstPath[0].toStdString());
 }
 
+void VideoPlayerWidget::slotPlay(){
+    m_player->play();
+}
+
+void VideoPlayerWidget::slotPause(){
+    m_player->pause();
+}
+
 void VideoPlayerWidget::slotVideoSliderMoved(int nValue){
     m_player->seek((qint64)nValue * 1000000);
 }
@@ -295,14 +303,16 @@ void VideoPlayerWidget::onPlayerStateChanged(const VideoPlayerState &state, cons
         }
         else if(state == VideoPlayer_Playing){
             m_progressTimer->start();
+            m_videoControllerWidget->setPlayStatus();
         }
         else if(state == VideoPlayer_Pause){
-
+            m_progressTimer->stop();
+            m_videoControllerWidget->setPauseStatus();
         }
     });
 }
 
-///显示视频数据，此函数不宜做耗时操作，否则会影响播放的流畅性。
+/// 显示视频数据，此函数不宜做耗时操作，否则会影响播放的流畅性。
 void VideoPlayerWidget::onDisplayVideo(VideoFrame::ptr videoFrame)
 {
     m_showVideoWidget->inputOneFrame(videoFrame);
