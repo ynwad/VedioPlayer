@@ -1,4 +1,7 @@
-﻿#include <QWidget>
+﻿#ifndef __SHOW_VIDEO_WIDGET_H__
+#define __SHOW_VIDEO_WIDGET_H__
+
+#include <QWidget>
 #include <QPaintEvent>
 #include <QResizeEvent>
 
@@ -9,10 +12,6 @@
 #include <QFile>
 
 #include "VideoPlayer/Video/video_frame.h"
-
-//namespace Ui {
-////class ShowVideoWidget;
-//}
 
 struct FaceInfoNode
 {
@@ -71,3 +70,5 @@ private:
 //    QOpenGLShaderProgram *m_program;
 
 };
+
+#endif // __SHOW_VIDEO_WIDGET_H__

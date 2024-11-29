@@ -1,5 +1,5 @@
-﻿#ifndef VIDEOSLIDER_H
-#define VIDEOSLIDER_H
+﻿#ifndef __VIDEO_SLIDER_H__
+#define __VIDEO_SLIDER_H__
 
 #include <QSlider>
 
@@ -33,4 +33,4 @@ private:
     int m_nPosX;
 };
 
-#endif // VIDEOSLIDER_H
+#endif // __VIDEO_SLIDER_H__

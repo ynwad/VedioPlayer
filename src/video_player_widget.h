@@ -1,5 +1,5 @@
-﻿#ifndef VIDEOPLAYERWIDGET_H
-#define VIDEOPLAYERWIDGET_H
+﻿#ifndef __VIDEO_PLAYER_WIDGET_H__
+#define __VIDEO_PLAYER_WIDGET_H__
 
 #include <QWidget>
 #include <QMenuBar>
@@ -10,9 +10,6 @@
 #include "draggable_widget.h"
 #include "Widget/video_controller_widget.h"
 
-//QT_BEGIN_NAMESPACE
-//namespace Ui { class VideoPlayerWidget; }
-//QT_END_NAMESPACE
 
 class VideoPlayerWidget : public DragAbleWidget, public VideoPlayerCallBack
 {
@@ -46,6 +43,12 @@ public slots:
     void slotPlay();
 
     void slotPause();
+
+    void slotStop(bool checked = false);
+
+    void slotFastForward(bool checked = false);
+
+    void slotFastBackward(bool checked = false);
 
     void slotVideoSliderMoved(int nValue);
 
@@ -84,6 +87,7 @@ private:
     QMenuBar* m_menuBar;
     bool m_bVideoCtlWidgetShow{false};
     QTimer *m_progressTimer;
+    QLabel* m_labelLogo;    // 暂停时显示LOGO
 };
 
-#endif // VIDEOPLAYERWIDGET_H
+#endif // __VIDEO_PLAYER_WIDGET_H__

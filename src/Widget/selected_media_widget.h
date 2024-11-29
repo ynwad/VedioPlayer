@@ -1,5 +1,5 @@
-﻿#ifndef SELECTEDMEDIAWIDGET_H
-#define SELECTEDMEDIAWIDGET_H
+﻿#ifndef __SELECTED_MEDIA_WIDGET_H__
+#define __SELECTED_MEDIA_WIDGET_H__
 
 #include <QDialog>
 #include <QTabWidget>
@@ -37,4 +37,4 @@ private:
     QStringList m_lstWaitingList;
 };
 
-#endif // SELECTEDMEDIAWIDGET_H
+#endif // __SELECTED_MEDIA_WIDGET_H__

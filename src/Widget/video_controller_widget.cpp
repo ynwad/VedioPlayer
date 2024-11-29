@@ -1,6 +1,8 @@
 ﻿#include "video_controller_widget.h"
 #include <QHBoxLayout>
 #include <QVariant>
+#include "video_player_widget.h"
+#include "spdlog/spdlog.h"
 
 #define PlayStatus "playStatus"
 #define Play "play"
@@ -29,51 +31,50 @@ VideoControllerWidget::VideoControllerWidget(QWidget *parent)
     m_sliderCurTimeLable->setStyleSheet("color: rgb(214, 214, 214);");
 
     m_btnPlayPause = new QPushButton();
+    QIcon pauseIcon(":/image/resource/image/pause.png");
+    m_btnPlayPause->setIcon(pauseIcon);
+    m_btnPlayPause->setIconSize(QSize(40, 40));  // 设置图片大小
     m_btnPlayPause->setProperty(PlayStatus, Pause);
     // 使用样式表设置背景图片
     m_btnPlayPause->setStyleSheet(
         "QPushButton {"
         "   border: none;"  // 移除边框
-        "   background-image: url(:/image/resource/image/pause.png);"  // 设置背景图片
-        "   background-repeat: no-repeat;"
-        "   background-position: center;"  // 居中显示
         "}"
         );
     m_btnPlayPause->setFixedSize(45, 45);
 
     m_btnFastForward = new QPushButton();  // 快进
-
+    QIcon fastForwardIcon(":/image/resource/image/fast_forward.png");
+    m_btnFastForward->setIcon(fastForwardIcon);
+    m_btnFastForward->setIconSize(QSize(40, 40));  // 设置图片大小
     m_btnFastForward->setStyleSheet(
         "QPushButton {"
         "   border: none;"  // 移除边框
-        "   background-image: url(:/image/resource/image/next.png);"  // 设置背景图片
-        "   background-repeat: no-repeat;"
-        "   background-position: center;"  // 居中显示
         "}"
         );
     m_btnFastForward->setFixedSize(45, 45);
 
-    M_btnFastBackward = new QPushButton(); // 快退
-    M_btnFastBackward->resize(140, 140);
-    M_btnFastBackward->setStyleSheet(
+    m_btnFastBackward = new QPushButton(); // 快退
+    m_btnFastBackward->resize(140, 140);
+    m_btnFastBackward->setStyleSheet(
         "QPushButton {"
         "   border: none;"  // 移除边框
-        "   background-image: url(:/image/resource/image/prior.png);"  // 设置背景图片
-        "   background-repeat: no-repeat;"
-        "   background-position: center;"  // 居中显示
         "}"
         );
-    M_btnFastBackward->setFixedSize(45, 45);
+    QIcon fastBackwardIcon(":/image/resource/image/fast_backward.png");
+    m_btnFastBackward->setIcon(fastBackwardIcon);
+    m_btnFastBackward->setIconSize(QSize(40, 40));  // 设置图片大小
+    m_btnFastBackward->setFixedSize(45, 45);
 
     m_btnStop = new QPushButton();
-    m_btnStop->setStyleSheet(
-        "QPushButton {"
+    QIcon stopIcon(":/image/resource/image/stop.png");
+    m_btnStop->setIcon(stopIcon);
+    m_btnStop->setIconSize(QSize(40, 40));  // 设置图片大小
+    m_btnStop->setStyleSheet("QPushButton {"
         "   border: none;"  // 移除边框
-        "   background-image: url(:/image/resource/image/pause.png);"  // 设置背景图片
-        "   background-repeat: no-repeat;"
-        "   background-position: center;"  // 居中显示
         "}"
         );
+
     m_btnStop->setFixedSize(45, 45);
 
     initUI();
@@ -81,11 +82,10 @@ VideoControllerWidget::VideoControllerWidget(QWidget *parent)
     connect(m_audioSlider, SIGNAL(valueChanged(int)), parent, SLOT(slotAudioSliderMoved(int)));
     connect(m_videoSlider, SIGNAL(signal_valueChanged(int)), parent, SLOT(slotVideoSliderMoved(int)));
 
-//    QPushButton *m_btnPlayPause;
-//    QPushButton *m_btnFastForward;  // 快进
-//    QPushButton *M_btnFastBackward; // 快退
-//    QPushButton *m_btnStop;
     connect(m_btnPlayPause, &QPushButton::clicked, this, &VideoControllerWidget::slot_btnPlayPauseClicked);
+    connect(m_btnFastForward, SIGNAL(clicked(bool)), parent, SLOT(slotFastForward(bool)));
+    connect(m_btnFastBackward, SIGNAL(clicked(bool)), parent, SLOT(slotFastBackward(bool)));
+    connect(m_btnStop, SIGNAL(clicked(bool)), parent, SLOT(slotStop(bool)));
 }
 
 VideoControllerWidget::~VideoControllerWidget(){
@@ -105,7 +105,7 @@ void VideoControllerWidget::initUI(){
 
     QHBoxLayout* hLayout = new QHBoxLayout();
     hLayout->addWidget(m_btnStop);
-    hLayout->addWidget(M_btnFastBackward);
+    hLayout->addWidget(m_btnFastBackward);
     hLayout->addWidget(m_btnPlayPause);
     hLayout->addWidget(m_btnFastForward);
     hLayout->addStretch();
@@ -118,6 +118,30 @@ void VideoControllerWidget::initUI(){
     mainLayout->addLayout(hLayout);
 
     setLayout(mainLayout);
+}
+
+void VideoControllerWidget::resetUI(){
+    resetButtons();
+    resetSlider();
+}
+
+void VideoControllerWidget::resetButtons(){
+    QIcon pauseIcon(":/image/resource/image/pause.png");
+    m_btnPlayPause->setIcon(pauseIcon);
+    m_btnPlayPause->setIconSize(QSize(40, 40));  // 设置图片大小
+    m_btnPlayPause->setProperty(PlayStatus, Pause);
+    // 使用样式表设置背景图片
+    m_btnPlayPause->setStyleSheet(
+        "QPushButton {"
+        "   border: none;"  // 移除边框
+        "}"
+        );
+}
+
+void VideoControllerWidget::resetSlider(){
+    m_videoSlider->setRange(0, 0);
+    setVideoSliderCurTime("00:00");
+    setVideoSliderTotalTime("00:00");
 }
 
 void VideoControllerWidget::setVideoSliderRange(int nMinVal, int nMaxVal){
@@ -137,10 +161,16 @@ void VideoControllerWidget::setVideoSliderCurTime(QString strCurTime){
 }
 
 void VideoControllerWidget::setPlayStatus(){
+    QIcon pauseIcon(":/image/resource/image/playing.png");
+    m_btnPlayPause->setIcon(pauseIcon);
+    m_btnPlayPause->setIconSize(QSize(40, 40));  // 设置图片大小
     m_btnPlayPause->setProperty(PlayStatus, Play);
 }
 
 void VideoControllerWidget::setPauseStatus(){
+    QIcon pauseIcon(":/image/resource/image/pause.png");
+    m_btnPlayPause->setIcon(pauseIcon);
+    m_btnPlayPause->setIconSize(QSize(40, 40));  // 设置图片大小
     m_btnPlayPause->setProperty(PlayStatus, Pause);
 }
 

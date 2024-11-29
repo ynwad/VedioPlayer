@@ -196,7 +196,6 @@ private:
     ///音频帧队列
     Cond *mConditon_Audio;
     std::list<AVPacket> m_audioPacktList;
-
 };
 
 #endif // VIDEO_PLAYER_H

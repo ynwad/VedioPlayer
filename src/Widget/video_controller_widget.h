@@ -1,5 +1,5 @@
-﻿#ifndef VIDEOCONTROLLERWIDGET_H
-#define VIDEOCONTROLLERWIDGET_H
+﻿#ifndef __VIDEO_CONTROLLER_WIDGET_H__
+#define __VIDEO_CONTROLLER_WIDGET_H__
 
 #include <QWidget>
 #include <QPushButton>
@@ -16,6 +16,12 @@ public:
     ~VideoControllerWidget();
 
     void initUI();
+
+    void resetUI();
+
+    void resetButtons();
+
+    void resetSlider();
 
     void setVideoSliderRange(int nMinVal, int nMaxVal);
 
@@ -52,8 +58,8 @@ private:
 
     QPushButton *m_btnPlayPause;
     QPushButton *m_btnFastForward;  // 快进
-    QPushButton *M_btnFastBackward; // 快退
+    QPushButton *m_btnFastBackward; // 快退
     QPushButton *m_btnStop;
 };
 
-#endif // VIDEOCONTROLLERWIDGET_H
+#endif // __VIDEO_CONTROLLER_WIDGET_H__

@@ -1,5 +1,5 @@
-﻿#ifndef FUNCTIONTRANSFER_H
-#define FUNCTIONTRANSFER_H
+﻿#ifndef __FUNCTION_TRANSFER_H__
+#define __FUNCTION_TRANSFER_H__
 
 #include  <functional>
 
@@ -58,4 +58,4 @@ private Q_SLOTS:
     void slotTimerTimeOut();
 };
 
-#endif // FUNCTIONTRANSFER_H
+#endif // __FUNCTION_TRANSFER_H__

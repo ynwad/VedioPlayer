@@ -32,6 +32,8 @@ VideoPlayerWidget::VideoPlayerWidget(QWidget *parent)
 
     m_videoControllerWidget = new VideoControllerWidget(this);
 
+    m_labelLogo = new QLabel(this);
+
     m_animationControlWidget = new QPropertyAnimation(m_videoControllerWidget, "geometry");
 
     m_progressTimer = new QTimer(this);
@@ -64,6 +66,14 @@ void VideoPlayerWidget::initUI(){
     vLayout->setSpacing(0);
 
     setLayout(vLayout);
+
+    QPixmap pixmap(":/image/resource/image/mediaPlayer.png"); // 加载图片资源
+
+    m_labelLogo->setPixmap(pixmap); // 缩放图片
+    m_labelLogo->setMaximumSize(pixmap.size());
+    m_labelLogo->setMinimumSize(40, 40);
+//    m_labelLogo->setScaledContents(true);
+    m_labelLogo->show();
 
     resize(400, 250);
 }
@@ -194,6 +204,31 @@ void VideoPlayerWidget::slotPause(){
     m_player->pause();
 }
 
+void VideoPlayerWidget::slotStop(bool checked){
+    m_player->stop();
+}
+
+void VideoPlayerWidget::slotFastForward(bool checked){
+    double curTime = m_player->getCurrentTime();
+    qint64 totalTime = m_player->getTotalTime();
+    qint64 targetTime = (qint64)(curTime + 10) * 1000000;
+    if(targetTime < totalTime){
+        m_player->seek(targetTime);
+    }
+    else{
+        m_player->stop();
+    }
+}
+
+void VideoPlayerWidget::slotFastBackward(bool checked){
+    double curTime = m_player->getCurrentTime();
+    qint64 targetTime = (qint64)(curTime - 10) * 1000000;
+    if(targetTime <= 0){
+        targetTime = 0;
+    }
+    m_player->seek(targetTime);
+}
+
 void VideoPlayerWidget::slotVideoSliderMoved(int nValue){
     m_player->seek((qint64)nValue * 1000000);
 }
@@ -236,6 +271,11 @@ void VideoPlayerWidget::resizeEvent(QResizeEvent *event){
     else{
         m_videoControllerWidget->move(0, height());
     }
+
+    // 计算父控件的中心位置
+    int x = (width() - m_labelLogo->width()) / 2;
+    int y = (height() - m_labelLogo->height()) / 2;
+    m_labelLogo->move(x, y);
 
     QWidget::resizeEvent(event);
 }
@@ -299,9 +339,13 @@ void VideoPlayerWidget::onPlayerStateChanged(const VideoPlayerState &state, cons
 {
     FunctionTransfer::runInMainThread([=](){
         if(state == VideoPlayer_Stop){
+            m_labelLogo->show();
             m_progressTimer->stop();
+            // 重置进度条
+            m_videoControllerWidget->resetUI();
         }
         else if(state == VideoPlayer_Playing){
+            m_labelLogo->hide();
             m_progressTimer->start();
             m_videoControllerWidget->setPlayStatus();
         }

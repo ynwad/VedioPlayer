@@ -2,8 +2,14 @@
     <qresource prefix="/image">
         <file>resource/image/next.png</file>
         <file>resource/image/pause.png</file>
-        <file>resource/image/play.png</file>
         <file>resource/image/prior.png</file>
-        <file>resource/image/video.png</file>
+        <file>resource/image/fast_backward.png</file>
+        <file>resource/image/fast_forward.png</file>
+        <file>resource/image/stop.png</file>
+        <file>resource/image/playing.png</file>
+        <file>resource/image/mediaPlayer.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>resource/image/mediaPlayer.png</file>
     </qresource>
 </RCC>
